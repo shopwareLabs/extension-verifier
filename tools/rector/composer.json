@@ -1,0 +1,7 @@
+{
+    
+    "require": {
+        "rector/rector": "^2.0",
+        "frosh/shopware-rector": "^0.5.0"
+    }
+}

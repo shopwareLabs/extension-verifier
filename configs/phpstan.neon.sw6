@@ -1,0 +1,15 @@
+parameters:
+    level: 0
+
+    bootstrapFiles:
+        - %currentWorkingDirectory%/vendor/autoload.php
+    paths:
+        - %currentWorkingDirectory%
+    excludePaths:
+        - vendor (?)
+        - tests/ (?)
+        - Test/ (?)
+        - autoload-dist/vendor (?)
+
+    reportUnmatchedIgnoredErrors: false
+    tipsOfTheDay: false

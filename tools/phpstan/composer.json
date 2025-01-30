@@ -1,0 +1,15 @@
+{
+    "name": "shopwarelabs/phpstan",
+    "type": "project",
+    "require": {
+        "phpstan/phpstan": "^2",
+        "shopwarelabs/phpstan-shopware": "*",
+        "phpstan/extension-installer": "*"
+    },
+    "config": {
+        "classmap-authoritative": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    }
+}
