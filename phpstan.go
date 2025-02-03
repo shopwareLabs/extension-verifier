@@ -40,16 +40,16 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 		return err
 	}
 
-	if err := installComposerDeps(config.RootDir, config.CheckAgainst); err != nil {
+	if err := installComposerDeps(config.Extension.GetPath(), config.CheckAgainst); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(path.Join(config.RootDir, "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
+	if err := os.WriteFile(path.Join(config.Extension.GetPath(), "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
 		return err
 	}
 
 	phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "phpstan", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json")
-	phpstan.Dir = config.RootDir
+	phpstan.Dir = config.Extension.GetPath()
 
 	log, _ := phpstan.Output()
 
@@ -66,7 +66,7 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 	for fileName, file := range phpstanResult.Files {
 		for _, message := range file.Messages {
 			check.AddResult(CheckResult{
-				Path:       strings.TrimPrefix(strings.TrimPrefix(fileName, "/private"), config.RootDir+"/"),
+				Path:       strings.TrimPrefix(strings.TrimPrefix(fileName, "/private"), config.Extension.GetPath()+"/"),
 				Line:       message.Line,
 				Message:    message.Message,
 				Severity:   "error",

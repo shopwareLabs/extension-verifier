@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type EslintOutput []struct {
@@ -39,6 +41,29 @@ type EslintOutput []struct {
 
 type Eslint struct{}
 
+func (e Eslint) pathsToCheck(config ToolConfig) []string {
+	paths := []string{
+		path.Join(config.Extension.GetResourcesDir(), "app", "storefront"),
+		path.Join(config.Extension.GetResourcesDir(), "app", "administration"),
+	}
+
+	for _, bundle := range config.Extension.GetExtensionConfig().Build.ExtraBundles {
+		paths = append(paths, path.Join(config.Extension.GetRootDir(), bundle.Path, "Resources", "app", "storefront"))
+		paths = append(paths, path.Join(config.Extension.GetRootDir(), bundle.Path, "Resources", "app", "administration"))
+	}
+
+	filteredPaths := make([]string, 0)
+	for _, p := range paths {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			filteredPaths = append(filteredPaths, p)
+		}
+	}
+
+	paths = filteredPaths
+
+	return paths
+}
+
 func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	cwd, err := os.Getwd()
 
@@ -46,38 +71,49 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 		return err
 	}
 
-	eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "eslint", "node_modules", ".bin", "eslint"), "--format=json", "--config", path.Join(cwd, "tools", "eslint", "eslint.config.mjs"), "--ignore-pattern", "**/app/storefront/dist/**", "--ignore-pattern", "public/administration/**", "--ignore-pattern", "vendor/**")
-	eslint.Dir = path.Join(config.RootDir, "src", "Resources")
+	paths := e.pathsToCheck(config)
 
-	log, _ := eslint.CombinedOutput()
+	var gr errgroup.Group
 
-	var eslintOutput EslintOutput
+	for _, p := range paths {
+		p := p
+		gr.Go(func() error {
+			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "eslint", "node_modules", ".bin", "eslint"), "--format=json", "--config", path.Join(cwd, "tools", "eslint", path.Base(p)+".config.mjs"), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**")
+			eslint.Dir = p
 
-	if err := json.Unmarshal(log, &eslintOutput); err != nil {
-		return fmt.Errorf("failed to unmarshal eslint output: %w, %s", err, string(log))
-	}
+			log, _ := eslint.CombinedOutput()
 
-	for _, diagnostic := range eslintOutput {
-		fixedPath := strings.TrimPrefix(strings.TrimPrefix(diagnostic.FilePath, "/private"), config.RootDir+"/")
+			var eslintOutput EslintOutput
 
-		for _, message := range diagnostic.Messages {
-			severity := "warn"
-
-			if message.Severity == 2 {
-				severity = "error"
+			if err := json.Unmarshal(log, &eslintOutput); err != nil {
+				return fmt.Errorf("failed to unmarshal eslint output: %w, %s", err, string(log))
 			}
 
-			check.AddResult(CheckResult{
-				Path:       fixedPath,
-				Line:       message.Line,
-				Message:    message.Message,
-				Severity:   severity,
-				Identifier: fmt.Sprintf("eslint/%s", message.RuleID),
-			})
-		}
+			for _, diagnostic := range eslintOutput {
+				fixedPath := strings.TrimPrefix(strings.TrimPrefix(diagnostic.FilePath, "/private"), config.Extension.GetPath()+"/")
+
+				for _, message := range diagnostic.Messages {
+					severity := "warn"
+
+					if message.Severity == 2 {
+						severity = "error"
+					}
+
+					check.AddResult(CheckResult{
+						Path:       fixedPath,
+						Line:       message.Line,
+						Message:    message.Message,
+						Severity:   severity,
+						Identifier: fmt.Sprintf("eslint/%s", message.RuleID),
+					})
+				}
+			}
+
+			return nil
+		})
 	}
 
-	return nil
+	return gr.Wait()
 }
 
 func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
@@ -87,18 +123,23 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 		return err
 	}
 
-	//NetiNextCustomerArea/src/Resources/public/administration/js/
+	paths := e.pathsToCheck(config)
 
-	eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "eslint", "node_modules", ".bin", "eslint"), "--config", path.Join(cwd, "tools", "eslint", "eslint.config.mjs"), "--ignore-pattern", "**/app/storefront/dist/**", "--ignore-pattern", "public/administration/**", "--fix")
-	eslint.Dir = path.Join(config.RootDir, "src", "Resources")
+	var gr errgroup.Group
 
-	log, err := eslint.CombinedOutput()
+	for _, p := range paths {
+		p := p
+		gr.Go(func() error {
+			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "eslint", "node_modules", ".bin", "eslint"), "--config", path.Join(cwd, "tools", "eslint", path.Base(p)+".config.mjs"), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**", "--fix")
+			eslint.Dir = p
 
-	fmt.Println(string(log))
+			log, _ := eslint.CombinedOutput()
 
-	if err != nil {
-		return err
+			fmt.Println(string(log))
+
+			return nil
+		})
 	}
 
-	return nil
+	return gr.Wait()
 }

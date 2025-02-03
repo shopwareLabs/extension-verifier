@@ -6,43 +6,16 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"sort"
 
+	"github.com/shopware/shopware-cli/extension"
 	"github.com/shopware/shopware-cli/version"
 )
 
-func guessExtension(rootDir string) (*ToolConfig, error) {
-	if _, err := os.Stat(filepath.Join(rootDir, "composer.json")); err == nil {
-		return guessByPlugin(rootDir)
+func convertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) {
+	cfg := &ToolConfig{
+		Extension: ext,
 	}
-
-	return nil, fmt.Errorf("could not guess extension type")
-}
-
-type ComposerJson struct {
-	Require map[string]string `json:"require"`
-}
-
-func guessByPlugin(rootDir string) (*ToolConfig, error) {
-	var composerJson ComposerJson
-
-	jsonFile, err := os.ReadFile(filepath.Join(rootDir, "composer.json"))
-
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(jsonFile, &composerJson); err != nil {
-		return nil, err
-	}
-
-	if _, ok := composerJson.Require["shopware/core"]; !ok {
-		return nil, fmt.Errorf("shopware/core requirement is missing")
-	}
-
-	cfg := &ToolConfig{RootDir: rootDir, ShopwareVersionConstraint: composerJson.Require["shopware/core"]}
 
 	if err := determineVersionRange(cfg); err != nil {
 		return nil, err
@@ -52,7 +25,11 @@ func guessByPlugin(rootDir string) (*ToolConfig, error) {
 }
 
 func determineVersionRange(cfg *ToolConfig) error {
-	constraint := version.MustConstraints(version.NewConstraint(cfg.ShopwareVersionConstraint))
+	constraint, err := cfg.Extension.GetShopwareVersionConstraint()
+
+	if err != nil {
+		return err
+	}
 
 	versions, err := getShopwareVersions()
 

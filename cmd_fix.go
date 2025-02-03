@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -10,7 +11,13 @@ var fixCommand = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Short: "Fixes known issues in a Shopware extension",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		toolCfg, err := guessExtension(args[0])
+		ext, err := extension.GetExtensionByFolder(args[0])
+
+		if err != nil {
+			return err
+		}
+
+		toolCfg, err := convertExtensionToToolConfig(ext)
 
 		if err != nil {
 			return err

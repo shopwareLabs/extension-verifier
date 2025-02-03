@@ -23,12 +23,12 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 
 	rectorConfigFile := path.Join(cwd, "tools", "rector", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
 
-	if err := installComposerDeps(config.RootDir, "highest"); err != nil {
+	if err := installComposerDeps(config.Extension.GetPath(), "highest"); err != nil {
 		return err
 	}
 
 	rector := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "rector", "vendor", "bin", "rector"), "process", "--config", rectorConfigFile, "--autoload-file", path.Join("vendor", "autoload.php"), "src")
-	rector.Dir = config.RootDir
+	rector.Dir = config.Extension.GetPath()
 
 	log, _ := rector.CombinedOutput()
 

@@ -1,15 +1,18 @@
 package main
 
-import "context"
+import (
+	"context"
 
-var availableTools = []Tool{Eslint{}, PhpStan{}, Rector{}}
+	"github.com/shopware/shopware-cli/extension"
+)
+
+var availableTools = []Tool{Eslint{}, PhpStan{}, Rector{}, SWCLI{}}
 
 type ToolConfig struct {
-	RootDir                   string
-	ShopwareVersionConstraint string
-	MinShopwareVersion        string
-	MaxShopwareVersion        string
-	CheckAgainst              string
+	MinShopwareVersion string
+	MaxShopwareVersion string
+	CheckAgainst       string
+	Extension          extension.Extension
 }
 
 type Tool interface {

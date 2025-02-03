@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -23,11 +24,25 @@ var checkCommand = &cobra.Command{
 			return err
 		}
 
-		if err := copyFiles(args[0], tmpDir); err != nil {
+		stat, err := os.Stat(args[0])
+
+		if err != nil {
 			return err
 		}
 
-		toolCfg, err := guessExtension(tmpDir)
+		var ext extension.Extension
+
+		if stat.IsDir() {
+			if err := copyFiles(args[0], tmpDir); err != nil {
+				return err
+			}
+
+			ext, err = extension.GetExtensionByFolder(tmpDir)
+		} else {
+			ext, err = extension.GetExtensionByZip(args[0])
+		}
+
+		toolCfg, err := convertExtensionToToolConfig(ext)
 
 		if err != nil {
 			return err
