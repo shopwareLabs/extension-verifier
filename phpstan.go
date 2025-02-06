@@ -34,6 +34,10 @@ type PhpStanOutput struct {
 type PhpStan struct{}
 
 func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) error {
+	if config.Extension.GetType() == "app" {
+		return nil
+	}
+
 	cwd, err := os.Getwd()
 
 	if err != nil {

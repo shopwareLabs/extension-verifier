@@ -41,29 +41,6 @@ type EslintOutput []struct {
 
 type Eslint struct{}
 
-func (e Eslint) pathsToCheck(config ToolConfig) []string {
-	paths := []string{
-		path.Join(config.Extension.GetResourcesDir(), "app", "storefront"),
-		path.Join(config.Extension.GetResourcesDir(), "app", "administration"),
-	}
-
-	for _, bundle := range config.Extension.GetExtensionConfig().Build.ExtraBundles {
-		paths = append(paths, path.Join(config.Extension.GetRootDir(), bundle.Path, "Resources", "app", "storefront"))
-		paths = append(paths, path.Join(config.Extension.GetRootDir(), bundle.Path, "Resources", "app", "administration"))
-	}
-
-	filteredPaths := make([]string, 0)
-	for _, p := range paths {
-		if _, err := os.Stat(p); !os.IsNotExist(err) {
-			filteredPaths = append(filteredPaths, p)
-		}
-	}
-
-	paths = filteredPaths
-
-	return paths
-}
-
 func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	cwd, err := os.Getwd()
 
@@ -71,7 +48,7 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 		return err
 	}
 
-	paths := e.pathsToCheck(config)
+	paths := getStorefrontPaths(config)
 
 	var gr errgroup.Group
 
@@ -123,7 +100,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 		return err
 	}
 
-	paths := e.pathsToCheck(config)
+	paths := getStorefrontPaths(config)
 
 	var gr errgroup.Group
 

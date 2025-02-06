@@ -54,6 +54,11 @@ COPY tools/eslint /eslint
 WORKDIR /eslint
 RUN npm install
 
+FROM base AS stylelint
+COPY tools/stylelint /stylelint
+WORKDIR /stylelint
+RUN npm install
+
 FROM golang:alpine AS executor
 
 COPY go.* /app/
@@ -69,6 +74,7 @@ WORKDIR /opt/
 
 COPY --from=phpstan /phpstan /opt/tools/phpstan
 COPY --from=eslint /eslint /opt/tools/eslint
+COPY --from=stylelint /stylelint /opt/tools/stylelint
 COPY --from=executor /app/executor /opt/executor
 
 ENTRYPOINT ["/opt/executor"]
