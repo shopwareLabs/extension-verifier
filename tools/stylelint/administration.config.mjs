@@ -9,6 +9,7 @@ export default {
     rules: {
         "selector-class-pattern": null,
         "import-notation": null,
-        "declaration-property-value-no-unknown": null
+        "declaration-property-value-no-unknown": null,
+        "at-rule-no-unknown": null,
     }
 };
