@@ -1,8 +1,9 @@
 /** @type {import('stylelint').Config} */
 export default {
     extends: [
-        "stylelint-config-standard"
+        "stylelint-config-recommended-scss"
     ],
+    customSyntax: "postcss-scss",
     plugins: [
         "stylelint-scss"
     ],
@@ -12,5 +13,9 @@ export default {
         "declaration-property-value-no-unknown": null,
         "at-rule-no-unknown": null,
         "no-descending-specificity": null,
+        "max-nesting-depth": [3, {
+            "ignore": ["blockless-at-rules", "pseudo-classes"],
+            "severity": "warning"
+        }]
     }
 };
