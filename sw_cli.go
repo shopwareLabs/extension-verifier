@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/shopware/shopware-cli/extension"
 )
@@ -17,8 +18,8 @@ func (s SWCLI) Check(ctx context.Context, check *Check, config ToolConfig) error
 		check.AddResult(CheckResult{
 			Path:       "",
 			Line:       0,
-			Message:    err,
-			Identifier: "shopware-cli/validation",
+			Message:    err.Message,
+			Identifier: fmt.Sprintf("shopware-cli/%s", err.Identifier),
 			Severity:   "error",
 		})
 	}
@@ -27,8 +28,8 @@ func (s SWCLI) Check(ctx context.Context, check *Check, config ToolConfig) error
 		check.AddResult(CheckResult{
 			Path:       "",
 			Line:       0,
-			Message:    err,
-			Identifier: "shopware-cli/validation",
+			Message:    err.Message,
+			Identifier: fmt.Sprintf("shopware-cli/%s", err.Identifier),
 			Severity:   "warning",
 		})
 	}

@@ -11,5 +11,6 @@ export default {
         "import-notation": null,
         "declaration-property-value-no-unknown": null,
         "at-rule-no-unknown": null,
+        "no-descending-specificity": null,
     }
 };

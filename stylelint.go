@@ -101,7 +101,7 @@ func (s StyleLint) Fix(ctx context.Context, config ToolConfig) error {
 	for _, p := range paths {
 		p := p
 		gr.Go(func() error {
-			stylelint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "stylelint", "node_modules", ".bin", "stylelint"), "--config", path.Join(cwd, "tools", "stylelint", path.Base(p)+".config.mjs"), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**", fmt.Sprintf("%s/**/*.scss", p), "--fix")
+			stylelint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "stylelint", "node_modules", ".bin", "stylelint"), "--config", path.Join(cwd, "tools", "stylelint", path.Base(p)+".config.mjs"), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**", "**/*.scss", "--fix")
 			stylelint.Dir = p
 			stylelint.Stdout = os.Stdout
 			stylelint.Stderr = os.Stderr

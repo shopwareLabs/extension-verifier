@@ -12,6 +12,7 @@ export default {
         "import-notation": null,
         "declaration-property-value-no-unknown": null,
         "at-rule-no-unknown": null,
-        "shopware-administration/no-scss-extension-import": true
+        "shopware-administration/no-scss-extension-import": true,
+        "no-descending-specificity": null,
     }
 };
