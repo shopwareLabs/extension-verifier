@@ -8,7 +8,7 @@ import (
 	"github.com/shopware/shopware-cli/extension"
 )
 
-var availableTools = []Tool{Eslint{}, PhpStan{}, Rector{}, SWCLI{}, StyleLint{}}
+var availableTools = []Tool{Eslint{}, PhpStan{}, Rector{}, SWCLI{}, StyleLint{}, PHPCSFixer{}}
 
 type ToolConfig struct {
 	MinShopwareVersion string
@@ -20,6 +20,7 @@ type ToolConfig struct {
 type Tool interface {
 	Check(ctx context.Context, check *Check, config ToolConfig) error
 	Fix(ctx context.Context, config ToolConfig) error
+	Format(ctx context.Context, config ToolConfig, dryRun bool) error
 }
 
 func getStorefrontPaths(config ToolConfig) []string {

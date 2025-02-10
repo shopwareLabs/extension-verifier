@@ -120,3 +120,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 
 	return gr.Wait()
 }
+
+func (e Eslint) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
+	return nil
+}

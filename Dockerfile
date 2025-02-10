@@ -49,6 +49,11 @@ COPY tools/phpstan /phpstan
 WORKDIR /phpstan
 RUN composer install
 
+FROM base AS php-cs-fixer
+COPY tools/php-cs-fixer /php-cs-fixer
+WORKDIR /php-cs-fixer
+RUN composer install
+
 FROM base AS eslint
 COPY tools/eslint /eslint
 WORKDIR /eslint
@@ -64,6 +69,7 @@ FROM golang:alpine AS executor
 COPY go.* /app/
 COPY *.go /app/
 COPY configs /app/configs
+COPY internal /app/internal
 
 WORKDIR /app
 RUN go mod download
@@ -75,6 +81,7 @@ WORKDIR /opt/
 COPY --from=phpstan /phpstan /opt/tools/phpstan
 COPY --from=eslint /eslint /opt/tools/eslint
 COPY --from=stylelint /stylelint /opt/tools/stylelint
+COPY --from=php-cs-fixer /php-cs-fixer /opt/tools/php-cs-fixer
 COPY --from=executor /app/executor /opt/executor
 
 ENTRYPOINT ["/opt/executor"]

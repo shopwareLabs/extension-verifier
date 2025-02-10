@@ -20,9 +20,23 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	}
 
 	cwd, err := os.Getwd()
-
 	if err != nil {
 		return err
+	}
+
+	// Check and remove existing vendor/composer.lock
+	vendorPath := path.Join(config.Extension.GetPath(), "vendor")
+	composerLockPath := path.Join(config.Extension.GetPath(), "composer.lock")
+
+	if _, err := os.Stat(vendorPath); err == nil {
+		if err := os.RemoveAll(vendorPath); err != nil {
+			return err
+		}
+	}
+	if _, err := os.Stat(composerLockPath); err == nil {
+		if err := os.Remove(composerLockPath); err != nil {
+			return err
+		}
 	}
 
 	rectorConfigFile := path.Join(cwd, "tools", "rector", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
@@ -35,8 +49,19 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	rector.Dir = config.Extension.GetPath()
 
 	log, _ := rector.CombinedOutput()
-
 	fmt.Println(string(log))
 
+	// Cleanup after execution
+	if err := os.RemoveAll(vendorPath); err != nil {
+		return err
+	}
+	if err := os.Remove(composerLockPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r Rector) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
 	return nil
 }

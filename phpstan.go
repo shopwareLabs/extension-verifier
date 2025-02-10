@@ -85,3 +85,7 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 func (p PhpStan) Fix(ctx context.Context, config ToolConfig) error {
 	return nil
 }
+
+func (p PhpStan) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
+	return nil
+}
