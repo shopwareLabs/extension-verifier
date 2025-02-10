@@ -8,7 +8,7 @@ import (
 	"github.com/shopware/shopware-cli/extension"
 )
 
-var availableTools = []Tool{Eslint{}, PhpStan{}, Rector{}, SWCLI{}, StyleLint{}, PHPCSFixer{}}
+var availableTools = []Tool{Eslint{}, PhpStan{}, Rector{}, SWCLI{}, StyleLint{}, PHPCSFixer{}, Biome{}}
 
 type ToolConfig struct {
 	MinShopwareVersion string

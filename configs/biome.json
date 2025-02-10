@@ -1,0 +1,27 @@
+{
+    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+    "files": {
+        "ignoreUnknown": true,
+        "ignore": [
+            "vendor/**/*.js",
+            "vendor/**/*.json",
+            "Resources/public/**/*.js",
+            "Resources/public/**/*.json",
+            "Resources/app/storefront/dist/*.js",
+            "Resources/app/storefront/dist/*.json",
+            "Resources/app/storefront/dist/**/*.js",
+            "Resources/app/storefront/dist/**/*.json"
+        ]
+    },
+    "javascript": {
+        "formatter": {
+            "quoteStyle":"single",
+            "indentWidth": 4
+        }
+    },
+    "json": {
+        "formatter": {
+            "indentWidth": 4
+        }
+    }
+}

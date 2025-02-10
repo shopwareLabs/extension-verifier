@@ -78,6 +78,8 @@ RUN CGO_ENABLED=0 go build -o /app/executor -ldflags "-s -w" .
 FROM base AS final
 WORKDIR /opt/
 
+RUN npm install -g @biomejs/biome
+
 COPY --from=phpstan /phpstan /opt/tools/phpstan
 COPY --from=eslint /eslint /opt/tools/eslint
 COPY --from=stylelint /stylelint /opt/tools/stylelint
