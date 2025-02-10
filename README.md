@@ -16,3 +16,9 @@ docker run --rm -v $(pwd):/ext:ro ghcr.io/shopwarelabs/extension-verifier:latest
 ```shell
 docker run --rm -v $(pwd):/ext:ro ghcr.io/shopwarelabs/extension-verifier:latest fix /ext
 ```
+
+### Formatting
+
+```shell
+docker run --rm -v $(pwd):/ext:ro ghcr.io/shopwarelabs/extension-verifier:latest format /ext
+```
