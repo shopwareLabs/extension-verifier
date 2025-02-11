@@ -1,0 +1,16 @@
+{
+    "name": "@shopware-ag/storefront-eslint-rules",
+    "type": "module",
+    "description": "Shopware Storefront ESLint rules",
+    "version": "1.0.0",
+    "main": "index.js",
+    "peerDependencies": {
+        "eslint": "^9"
+    },
+    "exports": {
+        ".": {
+            "import": "./index.js",
+            "require": "./index.js"
+        }
+    }
+}
