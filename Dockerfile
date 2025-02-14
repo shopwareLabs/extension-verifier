@@ -68,7 +68,6 @@ FROM golang:alpine AS executor
 
 COPY go.* /app/
 COPY *.go /app/
-COPY configs /app/configs
 COPY internal /app/internal
 
 WORKDIR /app
