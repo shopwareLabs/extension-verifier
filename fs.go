@@ -45,6 +45,21 @@ func copyFiles(currentPath string, targetPath string) error {
 }
 
 func copyFile(src, dst string) error {
+	// Check if it's a symlink
+	info, err := os.Lstat(src)
+	if err != nil {
+		return fmt.Errorf("failed to get file info: %w", err)
+	}
+
+	// If it's a symlink, create a new symlink
+	if info.Mode()&os.ModeSymlink != 0 {
+		linkTarget, err := os.Readlink(src)
+		if err != nil {
+			return fmt.Errorf("failed to read symlink: %w", err)
+		}
+		return os.Symlink(linkTarget, dst)
+	}
+
 	// Open source file
 	sourceFile, err := os.Open(src)
 	if err != nil {
