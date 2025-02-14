@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -43,4 +43,8 @@ func (s SWCLI) Fix(ctx context.Context, config ToolConfig) error {
 
 func (s SWCLI) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
 	return nil
+}
+
+func init() {
+	AddTool(SWCLI{})
 }

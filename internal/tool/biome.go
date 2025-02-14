@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"path"
 )
 
-//go:embed configs/biome.json
+//go:embed biome.json
 var biomeConfig []byte
 
 type Biome struct{}
@@ -54,4 +54,8 @@ func (b Biome) Format(ctx context.Context, config ToolConfig, dryRun bool) error
 	}
 
 	return os.Remove(path.Join(cwd, "biome.json"))
+}
+
+func init() {
+	AddTool(Biome{})
 }

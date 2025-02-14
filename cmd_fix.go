@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -17,7 +18,7 @@ var fixCommand = &cobra.Command{
 			return err
 		}
 
-		toolCfg, err := convertExtensionToToolConfig(ext)
+		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
 
 		if err != nil {
 			return err
@@ -25,7 +26,7 @@ var fixCommand = &cobra.Command{
 
 		var gr errgroup.Group
 
-		for _, tool := range availableTools {
+		for _, tool := range tool.GetTools() {
 			gr.Go(func() error {
 				return tool.Fix(cmd.Context(), *toolCfg)
 			})

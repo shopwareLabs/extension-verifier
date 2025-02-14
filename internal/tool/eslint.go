@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -48,7 +48,7 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 		return err
 	}
 
-	paths := getStorefrontPaths(config)
+	paths := GetJSFolders(config)
 
 	var gr errgroup.Group
 
@@ -100,7 +100,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 		return err
 	}
 
-	paths := getStorefrontPaths(config)
+	paths := GetJSFolders(config)
 
 	var gr errgroup.Group
 
@@ -123,4 +123,8 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 
 func (e Eslint) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
 	return nil
+}
+
+func init() {
+	AddTool(Eslint{})
 }

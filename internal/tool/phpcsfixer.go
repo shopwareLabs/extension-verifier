@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -44,4 +44,8 @@ func (p PHPCSFixer) Format(ctx context.Context, config ToolConfig, dryRun bool) 
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+func init() {
+	AddTool(PHPCSFixer{})
 }

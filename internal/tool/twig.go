@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -8,7 +8,11 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"google.golang.org/api/option"
+
+	"github.com/google/generative-ai-go/genai"
 	"github.com/shopware/extension-verifier/internal/twig"
 )
 
@@ -19,6 +23,18 @@ func (t Twig) Check(ctx context.Context, check *Check, config ToolConfig) error 
 }
 
 func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
+	apiKey := os.Getenv("GEMINI_API_KEY")
+
+	if apiKey == "" {
+		return nil
+	}
+
+	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
+
+	if err != nil {
+		return err
+	}
+
 	twigFolder := path.Join(config.Extension.GetResourcesDir(), "views", "storefront")
 
 	if _, err := os.Stat(twigFolder); os.IsNotExist(err) {
@@ -90,8 +106,13 @@ func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
 		}
 
 		var str strings.Builder
-		str.WriteString("You are a helper agent to help to upgrade Twig templates. I will give you the old and new template happend in the Software and as third the extended template. Apply the changes happend between old and new template to the extended template. Do only the necessary changes to the extended template.")
-		str.WriteString("If a block calls parent(), ignore that as a difference. Please also only output the modified extended template nothing more.")
+		str.WriteString("You are a helper agent to help to upgrade Twig templates. I will give you the old and new template happend in the Software and as third the extended template. Apply the changes happen between old and new template to the extended template.\n")
+		str.WriteString("Follow following rules while making adjustments to the extended template:\n")
+		str.WriteString("- Do only the necessary changes to the extended template.\n")
+		str.WriteString("- Do only modify the content inside the block and dont add new blocks\n")
+		str.WriteString("- Please also only output the modified extended template nothing more.\n")
+		str.WriteString("- Adjust also HTML elements to be more accessibility friendly.\n")
+		str.WriteString("- If in a {% block %} is {{ parent() }}, ignore it and dont modify the content of the block\n")
 		str.WriteString("\n")
 		str.WriteString("This was the old template:\n")
 		str.WriteString("```twig\n")
@@ -106,11 +127,13 @@ func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
 		str.WriteString(string(content))
 		str.WriteString("\n```")
 
-		req := str.String()
+		resp, err := generateContent(ctx, client, str.String())
 
-		os.WriteFile("llm.txt", []byte(req), os.ModePerm)
+		if err != nil {
+			return err
+		}
 
-		text, err := NewCompletionRequest(req)
+		text := string(resp.Candidates[0].Content.Parts[0].(genai.Text))
 
 		if err != nil {
 			return err
@@ -125,8 +148,32 @@ func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
 
 		text = strings.TrimPrefix(text[start+7:end], "\n")
 
+		contentStr := string(content)
+		if strings.TrimSpace(text) == strings.TrimSpace(contentStr) {
+			return nil
+		}
+
 		return os.WriteFile(file, []byte(text), os.ModePerm)
 	})
+}
+
+func (t Twig) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
+	return nil
+}
+
+func generateContent(ctx context.Context, client *genai.Client, message string) (*genai.GenerateContentResponse, error) {
+	resp, err := client.GenerativeModel("gemini-2.0-pro-exp-02-05").GenerateContent(ctx, genai.Text(message))
+
+	if err != nil {
+		if strings.Contains(err.Error(), "Resource has been exhausted") {
+			fmt.Println("Resource exhausted, waiting 15 seconds before retrying")
+			time.Sleep(15 * time.Second)
+
+			return generateContent(ctx, client, message)
+		}
+	}
+
+	return resp, err
 }
 
 func cloneShopwareStorefront(version string) (string, error) {
@@ -145,4 +192,8 @@ func cloneShopwareStorefront(version string) (string, error) {
 	}
 
 	return tempDir, nil
+}
+
+func init() {
+	AddTool(Twig{})
 }

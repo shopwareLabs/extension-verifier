@@ -1,4 +1,4 @@
-package main
+package tool
 
 import "sync"
 
@@ -7,7 +7,7 @@ type Check struct {
 	mutex   sync.Mutex
 }
 
-func newCheck() *Check {
+func NewCheck() *Check {
 	return &Check{
 		Results: []CheckResult{},
 	}

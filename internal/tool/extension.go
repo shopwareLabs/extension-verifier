@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/shopware/shopware-cli/version"
 )
 
-func convertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) {
+func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) {
 	cfg := &ToolConfig{
 		Extension: ext,
 	}
@@ -59,7 +59,7 @@ func determineVersionRange(cfg *ToolConfig) error {
 	}
 
 	if len(matchingVersions) == 0 {
-		return fmt.Errorf("the composer constraint does not match any shopware release")
+		matchingVersions = append(matchingVersions, version.Must(version.NewVersion("6.7.0.0")))
 	}
 
 	cfg.MinShopwareVersion = matchingVersions[0].String()

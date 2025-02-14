@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -64,4 +64,8 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 
 func (r Rector) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
 	return nil
+}
+
+func init() {
+	AddTool(Rector{})
 }

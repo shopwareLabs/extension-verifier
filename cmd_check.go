@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -42,7 +43,7 @@ var checkCommand = &cobra.Command{
 			ext, err = extension.GetExtensionByZip(args[0])
 		}
 
-		toolCfg, err := convertExtensionToToolConfig(ext)
+		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
 
 		if err != nil {
 			return err
@@ -52,11 +53,11 @@ var checkCommand = &cobra.Command{
 
 		defer os.RemoveAll(tmpDir)
 
-		result := newCheck()
+		result := tool.NewCheck()
 
 		var gr errgroup.Group
 
-		for _, tool := range availableTools {
+		for _, tool := range tool.GetTools() {
 			tool := tool
 			gr.Go(func() error {
 				return tool.Check(cmd.Context(), result, *toolCfg)

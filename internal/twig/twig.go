@@ -207,26 +207,7 @@ func parseNodes(input string, pos *int, stopOnEndBlock bool) ([]Node, error) {
 			}
 
 			// For node.
-			if strings.HasPrefix(tagContent, "for ") {
-				parts := strings.Fields(tagContent) // expect: for, <var>, in, <collection>
-				if len(parts) != 4 || parts[2] != "in" {
-					return nil, errors.New("invalid for-loop syntax")
-				}
-				loopVar := parts[1]
-				collection := parts[3]
-				*pos = tagEnd
-				children, err := parseNodes(input, pos, true)
-				if err != nil {
-					return nil, err
-				}
-				forNode := &ForNode{
-					Var:        loopVar,
-					Collection: collection,
-					Children:   children,
-				}
-				nodes = append(nodes, forNode)
-				continue
-			} else if strings.HasPrefix(tagContent, "block ") {
+			if strings.HasPrefix(tagContent, "block ") {
 				parts := strings.Fields(tagContent)
 				if len(parts) < 2 {
 					return nil, errors.New("invalid block tag: no block name")

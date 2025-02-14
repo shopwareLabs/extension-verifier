@@ -1,4 +1,4 @@
-package main
+package tool
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-//go:embed configs/phpstan.neon.sw6
+//go:embed phpstan.neon.sw6
 var phpstanConfigSW6 []byte
 
 type PhpStanOutput struct {
@@ -88,4 +88,8 @@ func (p PhpStan) Fix(ctx context.Context, config ToolConfig) error {
 
 func (p PhpStan) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
 	return nil
+}
+
+func init() {
+	AddTool(PhpStan{})
 }
