@@ -43,6 +43,10 @@ var checkCommand = &cobra.Command{
 			ext, err = extension.GetExtensionByZip(args[0])
 		}
 
+		if err != nil {
+			return err
+		}
+
 		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
 
 		if err != nil {

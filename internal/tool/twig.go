@@ -135,10 +135,6 @@ func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
 
 		text := string(resp.Candidates[0].Content.Parts[0].(genai.Text))
 
-		if err != nil {
-			return err
-		}
-
 		start := strings.Index(text, "```twig")
 		end := strings.LastIndex(text, "```")
 
