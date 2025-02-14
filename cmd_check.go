@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/charmbracelet/lipgloss/table"
 	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
@@ -72,14 +71,36 @@ var checkCommand = &cobra.Command{
 			return err
 		}
 
-		if reportingFormat == "table" {
-			t := table.New().Headers("Severity", "Identifier", "File", "Message")
-
+		if reportingFormat == "summary" {
+			// Group results by file
+			fileGroups := make(map[string][]tool.CheckResult)
 			for _, r := range result.Results {
-				t.Row(r.Severity, r.Identifier, fmt.Sprintf("%s:%d", r.Path, r.Line), r.Message)
+				if r.Path == "" {
+					r.Path = "general"
+				}
+
+				fileGroups[r.Path] = append(fileGroups[r.Path], r)
 			}
 
-			fmt.Println(t.String())
+			// Print results grouped by file
+			totalProblems := 0
+			errorCount := 0
+			warningCount := 0
+
+			for file, results := range fileGroups {
+				fmt.Printf("\n%s\n", file)
+				for _, r := range results {
+					totalProblems++
+					if r.Severity == "error" {
+						errorCount++
+					} else if r.Severity == "warning" {
+						warningCount++
+					}
+					fmt.Printf("  %d  %-7s  %s  %s\n", r.Line, r.Severity, r.Message, r.Identifier)
+				}
+			}
+
+			fmt.Printf("\n✖ %d problems (%d errors, %d warnings)\n", totalProblems, errorCount, warningCount)
 		} else {
 			j, err := json.Marshal(result)
 
@@ -100,12 +121,12 @@ var checkCommand = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(checkCommand)
-	checkCommand.PersistentFlags().String("reporter", "table", "Reporting format (table, json)")
+	checkCommand.PersistentFlags().String("reporter", "summary", "Reporting format (summary, json)")
 	checkCommand.PersistentFlags().String("check-against", "highest", "Check against Shopware Version (highest, lowest)")
 	checkCommand.PreRunE = func(cmd *cobra.Command, args []string) error {
 		reporter, _ := cmd.Flags().GetString("reporter")
-		if reporter != "table" && reporter != "json" {
-			return fmt.Errorf("invalid reporter format: %s. Must be either 'table' or 'json'", reporter)
+		if reporter != "summary" && reporter != "json" {
+			return fmt.Errorf("invalid reporter format: %s. Must be either 'summary' or 'json'", reporter)
 		}
 
 		mode, _ := cmd.Flags().GetString("check-against")
