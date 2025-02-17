@@ -3,6 +3,7 @@ package tool
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -38,7 +39,7 @@ func (b Biome) Format(ctx context.Context, config ToolConfig, dryRun bool) error
 		rootDir = path.Join(cwd, rootDir)
 	}
 
-	args := []string{"format"}
+	args := []string{"format", fmt.Sprintf("--config-path=%s", path.Join(cwd, "biome.json"))}
 
 	if !dryRun {
 		args = append(args, "--write")
