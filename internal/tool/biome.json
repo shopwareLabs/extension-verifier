@@ -16,12 +16,14 @@
     "javascript": {
         "formatter": {
             "quoteStyle":"single",
-            "indentWidth": 2
+            "indentWidth": 2,
+            "indentStyle": "space"
         }
     },
     "json": {
         "formatter": {
-            "indentWidth": 2
+            "indentWidth": 2,
+            "indentStyle": "space"
         }
     }
 }
