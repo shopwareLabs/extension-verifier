@@ -117,7 +117,7 @@ var checkCommand = &cobra.Command{
 			os.Stdout.Write(j)
 		}
 
-		if len(result.Results) > 0 {
+		if result.HasErrors() {
 			os.Exit(1)
 		}
 

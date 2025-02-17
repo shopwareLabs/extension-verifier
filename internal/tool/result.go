@@ -19,6 +19,16 @@ func (c *Check) AddResult(result CheckResult) {
 	c.Results = append(c.Results, result)
 }
 
+func (c *Check) HasErrors() bool {
+	for _, r := range c.Results {
+		if r.Severity == "error" {
+			return true
+		}
+	}
+
+	return false
+}
+
 type CheckResult struct {
 	// The path to the file that was checked
 	Path string `json:"path"`
