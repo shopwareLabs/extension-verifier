@@ -8,7 +8,7 @@ import (
 
 func installComposerDeps(rootDir, checkAgainst string) error {
 	if _, err := os.Stat(path.Join(rootDir, "vendor")); os.IsNotExist(err) {
-		additionalParams := []string{"update", "--no-interaction", "--no-progress", "--no-plugins", "--no-scripts"}
+		additionalParams := []string{"update", "--prefer-dist", "--no-interaction", "--no-progress", "--no-plugins", "--no-scripts", "--ignore-platform-reqs", "--no-dev"}
 
 		if checkAgainst == "lowest" {
 			additionalParams = append(additionalParams, "--prefer-lowest")
