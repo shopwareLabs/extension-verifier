@@ -4,7 +4,8 @@
     "require": {
         "phpstan/phpstan": "^2",
         "shopwarelabs/phpstan-shopware": "*",
-        "phpstan/extension-installer": "*"
+        "phpstan/extension-installer": "*",
+        "phpstan/phpstan-symfony": "*"
     },
     "config": {
         "classmap-authoritative": true,
