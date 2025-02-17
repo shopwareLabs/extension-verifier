@@ -71,6 +71,12 @@ var checkCommand = &cobra.Command{
 			return err
 		}
 
+		stepSummary := os.Getenv("GITHUB_STEP_SUMMARY")
+
+		if stepSummary != "" {
+			_ = os.WriteFile(stepSummary, []byte(convertResultsToMarkdown(result.Results)), 0644)
+		}
+
 		if reportingFormat == "summary" {
 			// Group results by file
 			fileGroups := make(map[string][]tool.CheckResult)

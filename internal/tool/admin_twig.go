@@ -19,7 +19,7 @@ func (a AdminTwigLinter) Check(ctx context.Context, check *Check, config ToolCon
 	fixers := admintwiglinter.GetFixers(version.Must(version.NewVersion(config.MinShopwareVersion)))
 
 	for _, p := range GetAdminFolders(config) {
-		filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -57,6 +57,10 @@ func (a AdminTwigLinter) Check(ctx context.Context, check *Check, config ToolCon
 
 			return nil
 		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -66,7 +70,7 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 	fixers := admintwiglinter.GetFixers(version.Must(version.NewVersion(config.MinShopwareVersion)))
 
 	for _, p := range GetAdminFolders(config) {
-		filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
+		err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -104,6 +108,10 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 
 			return os.WriteFile(path, []byte(buf.String()), os.ModePerm)
 		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
