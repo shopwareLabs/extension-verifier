@@ -14,6 +14,11 @@ import (
 //go:embed phpstan.neon.sw6
 var phpstanConfigSW6 []byte
 
+var possiblePHPStanConfigs = []string{
+	"phpstan.neon",
+	"phpstan.neon.dist",
+}
+
 type PhpStanOutput struct {
 	Totals struct {
 		Errors     int `json:"errors"`
@@ -33,6 +38,16 @@ type PhpStanOutput struct {
 
 type PhpStan struct{}
 
+func (p PhpStan) configExists(pluginPath string) bool {
+	for _, config := range possiblePHPStanConfigs {
+		if _, err := os.Stat(path.Join(pluginPath, config)); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	if config.Extension.GetType() == "app" {
 		return nil
@@ -48,8 +63,10 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 		return err
 	}
 
-	if err := os.WriteFile(path.Join(config.Extension.GetPath(), "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
-		return err
+	if !p.configExists(config.Extension.GetPath()) {
+		if err := os.WriteFile(path.Join(config.Extension.GetPath(), "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
+			return err
+		}
 	}
 
 	phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "phpstan", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json")
