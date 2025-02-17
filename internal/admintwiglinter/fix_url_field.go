@@ -22,6 +22,7 @@ func (u UrlFieldFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-url-field is removed, use mt-url-field instead. Review conversion for props, events, label and hint slot.",
 				Severity:   "error",
 				Identifier: "sw-url-field",
+				Line:       node.Line,
 			})
 		}
 	})

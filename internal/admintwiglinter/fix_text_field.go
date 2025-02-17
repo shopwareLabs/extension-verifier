@@ -21,6 +21,7 @@ func (t TextFieldFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-text-field is removed, use mt-text-field instead. Review conversion for props, events and label slot.",
 				Severity:   "error",
 				Identifier: "sw-text-field",
+				Line:       node.Line,
 			})
 		}
 	})

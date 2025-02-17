@@ -19,6 +19,7 @@ func (p ProgressBarFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-progress-bar is removed, use mt-progress-bar instead.",
 				Severity:   "error",
 				Identifier: "sw-progress-bar",
+				Line:       node.Line,
 			})
 		}
 	})

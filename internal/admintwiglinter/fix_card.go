@@ -20,6 +20,7 @@ func (c CardFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-card is removed, use mt-card instead. Review conversion for aiBadge and contentPadding.",
 				Severity:   "error",
 				Identifier: "sw-card",
+				Line:       node.Line,
 			})
 		}
 	})

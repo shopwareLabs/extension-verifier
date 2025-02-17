@@ -23,6 +23,7 @@ func (t TabsFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-tabs is removed, use mt-tabs instead. Review conversion for slots and properties.",
 				Severity:   "error",
 				Identifier: "sw-tabs",
+				Line:       node.Line,
 			})
 		}
 	})

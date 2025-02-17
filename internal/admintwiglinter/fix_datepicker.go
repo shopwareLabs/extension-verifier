@@ -19,6 +19,7 @@ func (d DatepickerFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-datepicker is removed, use mt-datepicker instead. Please review the conversion for the label property.",
 				Severity:   "error",
 				Identifier: "sw-datepicker",
+				Line:       node.Line,
 			})
 		}
 	})

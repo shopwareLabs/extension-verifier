@@ -21,6 +21,7 @@ func (p PasswordFieldFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-password-field is removed, use mt-password-field instead. Please review conversion for label/hint properties.",
 				Severity:   "error",
 				Identifier: "sw-password-field",
+				Line:       node.Line,
 			})
 		}
 	})

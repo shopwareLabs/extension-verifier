@@ -17,6 +17,7 @@ type CheckError struct {
 	Message    string
 	Severity   string
 	Identifier string
+	Line       int
 }
 
 func GetFixers(version *version.Version) []AdminTwigFixer {

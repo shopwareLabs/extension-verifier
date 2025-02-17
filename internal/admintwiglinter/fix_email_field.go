@@ -21,6 +21,7 @@ func (e EmailFieldFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-email-field is removed, use mt-email-field instead. Review conversion for props, events and label slot.",
 				Severity:   "error",
 				Identifier: "sw-email-field",
+				Line:       node.Line,
 			})
 		}
 	})

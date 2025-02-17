@@ -22,6 +22,7 @@ func (s SwitchFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-switch-field is removed, use mt-switch instead. Review conversion for props, events and slots.",
 				Severity:   "error",
 				Identifier: "sw-switch-field",
+				Line:       node.Line,
 			})
 		}
 	})

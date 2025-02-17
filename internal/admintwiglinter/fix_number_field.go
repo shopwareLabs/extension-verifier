@@ -21,6 +21,7 @@ func (n NumberFieldFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-number-field is removed, use mt-number-field instead. Please review conversion for props, events and label slot.",
 				Severity:   "error",
 				Identifier: "sw-number-field",
+				Line:       node.Line,
 			})
 		}
 	})

@@ -23,6 +23,7 @@ func (b ButtonFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-button is removed, use mt-button instead. Please review conversion for variant and router-link.",
 				Severity:   "error",
 				Identifier: "sw-button",
+				Line:       node.Line,
 			})
 		}
 	})

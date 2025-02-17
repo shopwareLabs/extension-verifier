@@ -19,6 +19,7 @@ func (e ExternalLinkFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-external-link is removed, use mt-external-link instead and remove the icon property.",
 				Severity:   "error",
 				Identifier: "sw-external-link",
+				Line:       node.Line,
 			})
 		}
 	})

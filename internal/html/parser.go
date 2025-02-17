@@ -20,6 +20,7 @@ type Node interface {
 // RawNode holds unchanged text.
 type RawNode struct {
 	Text string
+	Line int // added field
 }
 
 // Dump returns the raw text.
@@ -33,6 +34,7 @@ type ElementNode struct {
 	Attributes  []Attribute
 	Children    []Node
 	SelfClosing bool
+	Line        int // added field
 }
 
 // Dump returns the HTML representation of the element and its children.
@@ -94,6 +96,11 @@ func (p *Parser) skipWhitespace() {
 	}
 }
 
+// Helper to get line number at a given position.
+func (p *Parser) getLineAt(pos int) int {
+	return strings.Count(p.input[:pos], "\n") + 1
+}
+
 // parseNodes parses a list of nodes until an optional stop tag (used for element children).
 func (p *Parser) parseNodes(stopTag string) ([]Node, error) {
 	var nodes []Node
@@ -120,7 +127,10 @@ func (p *Parser) parseNodes(stopTag string) ([]Node, error) {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
-					nodes = append(nodes, &RawNode{Text: text})
+					nodes = append(nodes, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart), // added line attribute
+					})
 				}
 			}
 			element, err := p.parseElement()
@@ -137,7 +147,10 @@ func (p *Parser) parseNodes(stopTag string) ([]Node, error) {
 	if rawStart < p.pos {
 		text := p.input[rawStart:p.pos]
 		if text != "" {
-			nodes = append(nodes, &RawNode{Text: text})
+			nodes = append(nodes, &RawNode{
+				Text: text,
+				Line: p.getLineAt(rawStart), // added line attribute
+			})
 		}
 	}
 	return nodes, nil
@@ -145,6 +158,8 @@ func (p *Parser) parseNodes(stopTag string) ([]Node, error) {
 
 // parseElement parses an HTML element starting at the current position (assumes a '<').
 func (p *Parser) parseElement() (Node, error) {
+	// Record start position for line number.
+	startPos := p.pos
 	if p.current() != '<' {
 		return nil, fmt.Errorf("expected '<' at pos %d", p.pos)
 	}
@@ -160,6 +175,7 @@ func (p *Parser) parseElement() (Node, error) {
 		Tag:        tagName,
 		Attributes: []Attribute{},
 		Children:   []Node{},
+		Line:       p.getLineAt(startPos), // assign starting line
 	}
 
 	// Parse element attributes.
@@ -233,7 +249,10 @@ func (p *Parser) parseElementChildren(tag string) ([]Node, error) {
 				if rawStart < savedPos {
 					text := p.input[rawStart:savedPos]
 					if text != "" {
-						children = append(children, &RawNode{Text: text})
+						children = append(children, &RawNode{
+							Text: text,
+							Line: p.getLineAt(rawStart), // added line attribute
+						})
 					}
 				}
 				return children, nil
@@ -247,7 +266,10 @@ func (p *Parser) parseElementChildren(tag string) ([]Node, error) {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
-					children = append(children, &RawNode{Text: text})
+					children = append(children, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart), // added line attribute
+					})
 				}
 			}
 			child, err := p.parseElement()

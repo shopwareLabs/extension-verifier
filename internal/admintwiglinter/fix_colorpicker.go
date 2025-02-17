@@ -21,6 +21,7 @@ func (c ColorpickerFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-colorpicker is removed, use mt-colorpicker instead. Please review conversion for label property.",
 				Severity:   "error",
 				Identifier: "sw-colorpicker",
+				Line:       node.Line,
 			})
 		}
 	})

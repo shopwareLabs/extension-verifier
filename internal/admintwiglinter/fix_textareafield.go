@@ -19,6 +19,7 @@ func (t TextareaFieldFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-textarea-field is removed, use mt-textarea instead. Please manually review the new API differences.",
 				Severity:   "error",
 				Identifier: "sw-textarea-field",
+				Line:       node.Line,
 			})
 		}
 	})

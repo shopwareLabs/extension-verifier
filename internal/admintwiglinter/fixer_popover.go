@@ -20,6 +20,7 @@ func (p PopoverFixer) Check(node []html.Node) []CheckError {
 				Message:    "sw-popover is deprecated, use mt-floating-ui instead",
 				Severity:   "error",
 				Identifier: "sw-popover",
+				Line:       node.Line,
 			})
 		}
 	})

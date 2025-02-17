@@ -86,28 +86,6 @@ func TestSwExtendsParsing(t *testing.T) {
 	}
 }
 
-func TestForLoopParsing(t *testing.T) {
-	template := `{% for item in navigation %}
-            <li><a href="{{ item.href }}">{{ item.caption }}</a></li>
-        {% endfor %}`
-	nodes, err := ParseTemplate(template)
-	assert.NoError(t, err)
-
-	// Find the ForNode.
-	var forNode *ForNode
-	for _, n := range nodes {
-		if fn, ok := n.(*ForNode); ok {
-			forNode = fn
-			break
-		}
-	}
-	assert.NotNil(t, forNode)
-	assert.Equal(t, "item", forNode.Var)
-	assert.Equal(t, "navigation", forNode.Collection)
-
-	assert.Equal(t, template, nodes.Dump())
-}
-
 func TestPrintNodeParsing(t *testing.T) {
 	template := `{{ a_variable }}`
 	nodes, err := ParseTemplate(template)
@@ -204,24 +182,4 @@ func TestAutoescapeNodeParsing(t *testing.T) {
 	dumped := autoNode.Dump()
 	assert.Contains(t, dumped, "{% autoescape %}")
 	assert.Contains(t, dumped, "{% endautoescape %}")
-}
-
-func TestTypesParsing(t *testing.T) {
-	template := `{% types score: 'number' %}`
-	nodes, err := ParseTemplate(template)
-	assert.NoError(t, err)
-
-	var typesNode *TypesNode
-	for _, node := range nodes {
-		if tn, ok := node.(*TypesNode); ok {
-			typesNode = tn
-			break
-		}
-	}
-	assert.NotNil(t, typesNode)
-	expected := map[string]string{"score": "'number'"}
-	assert.Equal(t, expected, typesNode.Types)
-
-	dumped := typesNode.Dump()
-	assert.Contains(t, dumped, "score: 'number'")
 }

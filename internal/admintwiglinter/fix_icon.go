@@ -22,6 +22,7 @@ func (i IconFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-icon is removed, use mt-icon instead with proper size prop.",
 				Severity:   "error",
 				Identifier: "sw-icon",
+				Line:       node.Line,
 			})
 		}
 	})

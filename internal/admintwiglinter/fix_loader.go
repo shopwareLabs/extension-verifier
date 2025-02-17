@@ -19,6 +19,7 @@ func (l LoaderFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-loader is removed, use mt-loader instead.",
 				Severity:   "error",
 				Identifier: "sw-loader",
+				Line:       node.Line,
 			})
 		}
 	})

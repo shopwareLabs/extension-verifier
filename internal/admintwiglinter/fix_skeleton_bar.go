@@ -19,6 +19,7 @@ func (s SkeletonBarFixer) Check(nodes []html.Node) []CheckError {
 				Message:    "sw-skeleton-bar is removed, use mt-skeleton-bar instead.",
 				Severity:   "error",
 				Identifier: "sw-skeleton-bar",
+				Line:       node.Line,
 			})
 		}
 	})
