@@ -54,14 +54,9 @@ COPY tools/php-cs-fixer /php-cs-fixer
 WORKDIR /php-cs-fixer
 RUN composer install
 
-FROM base AS eslint
-COPY tools/eslint /eslint
-WORKDIR /eslint
-RUN npm install
-
-FROM base AS stylelint
-COPY tools/stylelint /stylelint
-WORKDIR /stylelint
+FROM base AS js
+COPY tools/js /js
+WORKDIR /js
 RUN npm install
 
 FROM golang:alpine AS executor
@@ -77,11 +72,8 @@ RUN CGO_ENABLED=0 go build -o /app/executor -ldflags "-s -w" .
 FROM base AS final
 WORKDIR /opt/
 
-RUN npm install -g @biomejs/biome
-
 COPY --from=phpstan /phpstan /opt/tools/phpstan
-COPY --from=eslint /eslint /opt/tools/eslint
-COPY --from=stylelint /stylelint /opt/tools/stylelint
+COPY --from=js /js /opt/tools/js
 COPY --from=php-cs-fixer /php-cs-fixer /opt/tools/php-cs-fixer
 COPY --from=executor /app/executor /opt/executor
 
