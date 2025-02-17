@@ -40,7 +40,7 @@ func (a AdminTwigLinter) Check(ctx context.Context, check *Check, config ToolCon
 			parsed, err := html.NewParser(string(file))
 
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to parse %s: %w", path, err)
 			}
 
 			for _, fixer := range fixers {

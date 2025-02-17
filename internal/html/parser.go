@@ -101,12 +101,45 @@ func (p *Parser) getLineAt(pos int) int {
 	return strings.Count(p.input[:pos], "\n") + 1
 }
 
+// skipComment skips an HTML comment starting at "<!--" until "-->".
+func (p *Parser) skipComment() error {
+	if p.peek(4) != "<!--" {
+		return nil
+	}
+	// Skip the opening "<!--"
+	p.pos += 4
+	// Find the closing "-->"
+	idx := strings.Index(p.input[p.pos:], "-->")
+	if idx == -1 {
+		return fmt.Errorf("unterminated comment starting at pos %d", p.pos-4)
+	}
+	p.pos += idx + 3 // skip past "-->"
+	return nil
+}
+
 // parseNodes parses a list of nodes until an optional stop tag (used for element children).
 func (p *Parser) parseNodes(stopTag string) ([]Node, error) {
 	var nodes []Node
 	rawStart := p.pos
 
 	for p.pos < p.length {
+		// Check for comment start and skip it.
+		if p.peek(4) == "<!--" {
+			if p.pos > rawStart {
+				text := p.input[rawStart:p.pos]
+				if text != "" {
+					nodes = append(nodes, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart), // added line attribute
+					})
+				}
+			}
+			if err := p.skipComment(); err != nil {
+				return nodes, err
+			}
+			rawStart = p.pos
+			continue
+		}
 		// If we’re about to hit a closing tag for the current element, break.
 		if p.current() == '<' && p.peek(2) == "</" {
 			// Save position to check tag name.
@@ -154,6 +187,15 @@ func (p *Parser) parseNodes(stopTag string) ([]Node, error) {
 		}
 	}
 	return nodes, nil
+}
+
+// isVoidElement returns true if the tag is a void element (e.g., <br> does not require a closing tag)
+func isVoidElement(tag string) bool {
+	switch strings.ToLower(tag) {
+	case "area", "base", "br", "col", "embed", "hr", "img", "input", "keygen", "link", "meta", "param", "source", "track", "wbr":
+		return true
+	}
+	return false
 }
 
 // parseElement parses an HTML element starting at the current position (assumes a '<').
@@ -211,6 +253,10 @@ func (p *Parser) parseElement() (Node, error) {
 	}
 	if p.current() == '>' {
 		p.pos++ // skip '>'
+		if isVoidElement(tagName) {
+			node.SelfClosing = true
+			return node, nil
+		}
 	} else {
 		return nil, fmt.Errorf("expected '>' at pos %d", p.pos)
 	}
@@ -231,6 +277,23 @@ func (p *Parser) parseElementChildren(tag string) ([]Node, error) {
 	rawStart := p.pos
 
 	for p.pos < p.length {
+		// Check for comment and skip.
+		if p.peek(4) == "<!--" {
+			if p.pos > rawStart {
+				text := p.input[rawStart:p.pos]
+				if text != "" {
+					children = append(children, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart), // added line attribute
+					})
+				}
+			}
+			if err := p.skipComment(); err != nil {
+				return children, err
+			}
+			rawStart = p.pos
+			continue
+		}
 		// Check for a closing tag.
 		if p.current() == '<' && p.peek(2) == "</" {
 			savedPos := p.pos
