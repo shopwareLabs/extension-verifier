@@ -6,7 +6,7 @@ export default {
     customSyntax: "postcss-scss",
     plugins: [
         "stylelint-scss",
-        "./rules/administration/wrong-scss-import.js"
+        "@shopware-ag/admin-stylelint-rules"
     ],
     rules: {
         "selector-class-pattern": null,

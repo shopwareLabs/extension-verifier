@@ -55,7 +55,7 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 	for _, p := range paths {
 		p := p
 		gr.Go(func() error {
-			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "eslint", "node_modules", ".bin", "eslint"), "--format=json", "--config", path.Join(cwd, "tools", "eslint", path.Base(p)+".config.mjs"), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**")
+			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "js", "node_modules", ".bin", "eslint"), "--format=json", "--config", path.Join(cwd, "tools", "js", fmt.Sprintf("eslint.config.%s.mjs", path.Base(p))), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**")
 			eslint.Dir = p
 
 			log, _ := eslint.CombinedOutput()
@@ -107,7 +107,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 	for _, p := range paths {
 		p := p
 		gr.Go(func() error {
-			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "eslint", "node_modules", ".bin", "eslint"), "--config", path.Join(cwd, "tools", "eslint", path.Base(p)+".config.mjs"), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**", "--fix")
+			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "js", "node_modules", ".bin", "eslint"), "--config", path.Join(cwd, "tools", "js", fmt.Sprintf("eslint.config.%s.mjs", path.Base(p))), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**", "--fix")
 			eslint.Dir = p
 
 			log, _ := eslint.CombinedOutput()

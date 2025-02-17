@@ -1,6 +1,7 @@
 import globals from "globals";
 import pluginJs from "@eslint/js";
 import tseslint from "typescript-eslint";
+import eslintConfigPrettier from "eslint-config-prettier";
 
 import storefrontRules from '@shopware-ag/storefront-eslint-rules';
 
@@ -10,6 +11,7 @@ export default [
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   storefrontRules,
+  eslintConfigPrettier,
   {
     rules: {
       '@typescript-eslint/no-unused-vars': 'warn',

@@ -1,0 +1,12 @@
+{
+    "name": "@shopware-ag/admin-stylelint-rules",
+    "version": "0.0.1",
+    "main": "index.js",
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./index.js",
+            "require": "./index.js"
+        }
+    }
+}
