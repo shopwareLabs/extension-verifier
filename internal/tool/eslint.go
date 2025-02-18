@@ -52,11 +52,14 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 
 	var gr errgroup.Group
 
+	env := append(os.Environ(), fmt.Sprintf("SHOPWARE_VERSION=%s", config.MinShopwareVersion))
+
 	for _, p := range paths {
 		p := p
 		gr.Go(func() error {
 			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "js", "node_modules", ".bin", "eslint"), "--format=json", "--config", path.Join(cwd, "tools", "js", fmt.Sprintf("eslint.config.%s.mjs", path.Base(p))), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**")
 			eslint.Dir = p
+			eslint.Env = env
 
 			log, _ := eslint.CombinedOutput()
 
@@ -101,6 +104,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 	}
 
 	paths := GetJSFolders(config)
+	env := append(os.Environ(), fmt.Sprintf("SHOPWARE_VERSION=%s", config.MinShopwareVersion))
 
 	var gr errgroup.Group
 
@@ -109,6 +113,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 		gr.Go(func() error {
 			eslint := exec.CommandContext(ctx, "node", path.Join(cwd, "tools", "js", "node_modules", ".bin", "eslint"), "--config", path.Join(cwd, "tools", "js", fmt.Sprintf("eslint.config.%s.mjs", path.Base(p))), "--ignore-pattern", "dist/**", "--ignore-pattern", "vendor/**", "--fix")
 			eslint.Dir = p
+			eslint.Env = env
 
 			log, _ := eslint.CombinedOutput()
 
