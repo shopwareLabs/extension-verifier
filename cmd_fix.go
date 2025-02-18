@@ -1,6 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
@@ -16,6 +20,11 @@ var fixCommand = &cobra.Command{
 
 		if err != nil {
 			return err
+		}
+
+		gitPath := filepath.Join(args[0], ".git")
+		if stat, err := os.Stat(gitPath); err != nil || !stat.IsDir() {
+			return fmt.Errorf("provided folder is not a git repository")
 		}
 
 		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
