@@ -33,7 +33,7 @@ type PhpStanOutput struct {
 			Identifier string `json:"identifier"`
 		} `json:"messages"`
 	} `json:"files"`
-	Errors []any `json:"errors"`
+	Errors []string `json:"errors"`
 }
 
 type PhpStan struct{}
@@ -59,7 +59,7 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 		return err
 	}
 
-	if err := installComposerDeps(config.Extension.GetPath(), config.CheckAgainst); err != nil {
+	if err := installComposerDeps(config.Extension, config.CheckAgainst); err != nil {
 		return err
 	}
 
@@ -74,14 +74,22 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 
 	log, _ := phpstan.Output()
 
+	log = []byte(strings.ReplaceAll(string(log), "\"files\":[]", "\"files\":{}"))
+
 	var phpstanResult PhpStanOutput
 
 	if err := json.Unmarshal(log, &phpstanResult); err != nil {
-		if strings.Contains(err.Error(), "cannot unmarshal array into Go struct field PhpStanOutput.file") {
-			return nil
-		}
-
 		return fmt.Errorf("failed to unmarshal phpstan output: %w", err)
+	}
+
+	for _, error := range phpstanResult.Errors {
+		check.AddResult(CheckResult{
+			Path:       "phpstan.neon",
+			Message:    error,
+			Severity:   "error",
+			Line:       0,
+			Identifier: "phpstan/error",
+		})
 	}
 
 	for fileName, file := range phpstanResult.Files {

@@ -24,6 +24,16 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 		return err
 	}
 
+	// Backup composer.json
+	composerJSONPath := path.Join(config.Extension.GetPath(), "composer.json")
+	var backupData []byte
+	if _, err := os.Stat(composerJSONPath); err == nil {
+		backupData, err = os.ReadFile(composerJSONPath)
+		if err != nil {
+			return fmt.Errorf("failed to backup composer.json: %w", err)
+		}
+	}
+
 	// Check and remove existing vendor/composer.lock
 	vendorPath := path.Join(config.Extension.GetPath(), "vendor")
 	composerLockPath := path.Join(config.Extension.GetPath(), "composer.lock")
@@ -41,7 +51,7 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 
 	rectorConfigFile := path.Join(cwd, "tools", "php", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
 
-	if err := installComposerDeps(config.Extension.GetPath(), "highest"); err != nil {
+	if err := installComposerDeps(config.Extension, "highest"); err != nil {
 		return err
 	}
 
@@ -57,6 +67,13 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	}
 	if err := os.Remove(composerLockPath); err != nil {
 		return err
+	}
+
+	// Restore composer.json
+	if backupData != nil {
+		if err := os.WriteFile(composerJSONPath, backupData, 0644); err != nil {
+			return fmt.Errorf("failed to restore composer.json: %w", err)
+		}
 	}
 
 	return nil
