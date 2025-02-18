@@ -71,10 +71,8 @@ var checkCommand = &cobra.Command{
 			return err
 		}
 
-		stepSummary := os.Getenv("GITHUB_STEP_SUMMARY")
-
-		if stepSummary != "" {
-			_ = os.WriteFile(stepSummary, []byte(convertResultsToMarkdown(result.Results)), 0644)
+		if err := doCIReport(result); err != nil {
+			return err
 		}
 
 		if reportingFormat == "summary" {
