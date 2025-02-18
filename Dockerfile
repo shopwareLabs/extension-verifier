@@ -45,13 +45,9 @@ EOF
 
 FROM base AS phpstan
 
-COPY tools/phpstan /phpstan
-WORKDIR /phpstan
-RUN composer install
-
-FROM base AS php-cs-fixer
-COPY tools/php-cs-fixer /php-cs-fixer
-WORKDIR /php-cs-fixer
+FROM base AS php
+COPY tools/php /php
+WORKDIR /php
 RUN composer install
 
 FROM base AS js
@@ -72,9 +68,8 @@ RUN CGO_ENABLED=0 go build -o /app/executor -ldflags "-s -w" .
 FROM base AS final
 WORKDIR /opt/
 
-COPY --from=phpstan /phpstan /opt/tools/phpstan
+COPY --from=php /php /opt/tools/php
 COPY --from=js /js /opt/tools/js
-COPY --from=php-cs-fixer /php-cs-fixer /opt/tools/php-cs-fixer
 COPY --from=executor /app/executor /opt/executor
 
 ENTRYPOINT ["/opt/executor"]

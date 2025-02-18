@@ -34,11 +34,11 @@ func (p PHPCSFixer) Format(ctx context.Context, config ToolConfig, dryRun bool) 
 		rootDir = path.Join(cwd, rootDir)
 	}
 
-	args := []string{"fix", "--config", path.Join(cwd, "tools", "php-cs-fixer", ".php-cs-fixer.dist.php"), rootDir}
+	args := []string{"fix", "--config", path.Join(cwd, "tools", "php", ".php-cs-fixer.dist.php"), rootDir}
 	if dryRun {
 		args = append(args, "--dry-run")
 	}
-	cmd := exec.CommandContext(ctx, path.Join(cwd, "tools", "php-cs-fixer", "vendor", "bin", "php-cs-fixer"), args...)
+	cmd := exec.CommandContext(ctx, path.Join(cwd, "tools", "php", "vendor", "bin", "php-cs-fixer"), args...)
 	cmd.Dir = config.Extension.GetPath()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
