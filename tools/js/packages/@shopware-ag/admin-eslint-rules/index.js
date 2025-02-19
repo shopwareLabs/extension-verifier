@@ -3,11 +3,13 @@ import { compareVersions } from 'compare-versions';
 import noSnippetImport from "./no-snippet-import.js";
 import noSrcImport from "./no-src-import.js";
 import noVuex from './6.7/state-import.js';
+import requireExplicitEmits from './6.7/require-explict-emits.js';
 
 let rules = {
     "no-src-import": noSrcImport,
     "no-snippet-import": noSnippetImport,
     "no-shopware-store": noVuex,
+    "require-explict-emits": requireExplicitEmits,
 }
 
 if (process.env.SHOPWARE_VERSION) {
