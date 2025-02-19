@@ -43,7 +43,11 @@ func (e *ElementNode) Dump() string {
 	builder.WriteString("<" + e.Tag)
 	// Use attributes slice to preserve order.
 	for _, attr := range e.Attributes {
-		builder.WriteString(" " + attr.Key + "=\"" + attr.Value + "\"")
+		if attr.Value == "" {
+			builder.WriteString(" " + attr.Key)
+		} else {
+			builder.WriteString(" " + attr.Key + "=\"" + attr.Value + "\"")
+		}
 	}
 	if e.SelfClosing {
 		builder.WriteString("/>")
