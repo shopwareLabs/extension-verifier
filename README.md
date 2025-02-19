@@ -14,11 +14,11 @@ docker run --rm -v $(pwd):/ext:ro ghcr.io/shopwarelabs/extension-verifier:latest
 ### Automatic Fixes
 
 ```shell
-docker run --rm -v $(pwd):/ext:ro ghcr.io/shopwarelabs/extension-verifier:latest fix /ext
+docker run --rm -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest fix /ext
 ```
 
 ### Formatting
 
 ```shell
-docker run --rm -v $(pwd):/ext:ro ghcr.io/shopwarelabs/extension-verifier:latest format /ext
+docker run --rm -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest format /ext
 ```
