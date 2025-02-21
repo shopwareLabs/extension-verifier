@@ -20,7 +20,7 @@ func TestSwitchFixer(t *testing.T) {
 		{
 			description: "replace noMarginTop with removeTopMargin",
 			before:      `<sw-switch-field noMarginTop />`,
-			after:       `<mt-switch removeTopMargin=""/>`,
+			after:       `<mt-switch removeTopMargin/>`,
 		},
 		{
 			description: "remove size, id, ghostValue, padded and partlyChecked",

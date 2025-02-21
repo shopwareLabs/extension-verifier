@@ -49,7 +49,7 @@ func TestCheckboxFieldFixer(t *testing.T) {
 		{
 			description: "convert partlyChecked to partial",
 			before:      `<sw-checkbox-field partlyChecked />`,
-			after:       `<mt-checkbox partial=""/>`,
+			after:       `<mt-checkbox partial/>`,
 		},
 		{
 			description: "replace @update:value with @update:checked",

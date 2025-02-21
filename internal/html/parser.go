@@ -17,6 +17,16 @@ type Node interface {
 	Dump() string
 }
 
+type NodeList []Node
+
+func (nodeList NodeList) Dump() string {
+	var builder strings.Builder
+	for _, node := range nodeList {
+		builder.WriteString(node.Dump())
+	}
+	return builder.String()
+}
+
 // RawNode holds unchanged text.
 type RawNode struct {
 	Text string
@@ -32,7 +42,7 @@ func (r *RawNode) Dump() string {
 type ElementNode struct {
 	Tag         string
 	Attributes  []Attribute
-	Children    []Node
+	Children    NodeList
 	SelfClosing bool
 	Line        int // added field
 }
@@ -69,7 +79,7 @@ type Parser struct {
 }
 
 // NewParser creates a new parser for the given input.
-func NewParser(input string) ([]Node, error) {
+func NewParser(input string) (NodeList, error) {
 	p := &Parser{input: input, pos: 0, length: len(input)}
 
 	return p.parseNodes("")
@@ -122,8 +132,8 @@ func (p *Parser) skipComment() error {
 }
 
 // parseNodes parses a list of nodes until an optional stop tag (used for element children).
-func (p *Parser) parseNodes(stopTag string) ([]Node, error) {
-	var nodes []Node
+func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
+	var nodes NodeList
 	rawStart := p.pos
 
 	for p.pos < p.length {
@@ -220,7 +230,7 @@ func (p *Parser) parseElement() (Node, error) {
 	node := &ElementNode{
 		Tag:        tagName,
 		Attributes: []Attribute{},
-		Children:   []Node{},
+		Children:   NodeList{},
 		Line:       p.getLineAt(startPos), // assign starting line
 	}
 
@@ -276,8 +286,8 @@ func (p *Parser) parseElement() (Node, error) {
 }
 
 // parseElementChildren parses the child nodes of an element until the closing tag is reached.
-func (p *Parser) parseElementChildren(tag string) ([]Node, error) {
-	var children []Node
+func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
+	var children NodeList
 	rawStart := p.pos
 
 	for p.pos < p.length {
@@ -404,13 +414,13 @@ func (p *Parser) parseAttrValue() string {
 	return p.input[start:p.pos]
 }
 
-func TraverseNode(n []Node, f func(*ElementNode)) {
+func TraverseNode(n NodeList, f func(*ElementNode)) {
 	for _, node := range n {
 		switch node := node.(type) {
 		case *ElementNode:
 			f(node)
 			for _, child := range node.Children {
-				TraverseNode([]Node{child}, f)
+				TraverseNode(NodeList{child}, f)
 			}
 		}
 	}

@@ -106,7 +106,7 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 				buf.WriteString(node.Dump())
 			}
 
-			return os.WriteFile(path, []byte(buf.String()), os.ModePerm)
+			return os.WriteFile(path, []byte(parsed.Dump()), os.ModePerm)
 		})
 
 		if err != nil {

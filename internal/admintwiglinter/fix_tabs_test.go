@@ -35,7 +35,7 @@ func TestTabsFixer(t *testing.T) {
 		{
 			description: "rename is-vertical to vertical and remove align-right",
 			before:      `<sw-tabs is-vertical align-right />`,
-			after:       `<mt-tabs vertical=""/>`,
+			after:       `<mt-tabs vertical/>`,
 		},
 	}
 

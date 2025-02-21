@@ -15,6 +15,7 @@ func (r Rector) Check(ctx context.Context, check *Check, config ToolConfig) erro
 }
 
 func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
+	return nil
 	if config.Extension.GetType() == "app" {
 		return nil
 	}

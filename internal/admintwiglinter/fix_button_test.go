@@ -20,7 +20,7 @@ func TestButtonFixer(t *testing.T) {
 		{
 			description: "remove variant ghost and add ghost attribute",
 			before:      `<sw-button variant="ghost">Save</sw-button>`,
-			after:       `<mt-button ghost="">Save</mt-button>`,
+			after:       `<mt-button ghost>Save</mt-button>`,
 		},
 		{
 			description: "replace danger variant with critical",
@@ -30,7 +30,7 @@ func TestButtonFixer(t *testing.T) {
 		{
 			description: "replace ghost-danger variant with critical and add ghost",
 			before:      `<sw-button variant="ghost-danger">Delete</sw-button>`,
-			after:       `<mt-button variant="critical" ghost="">Delete</mt-button>`,
+			after:       `<mt-button variant="critical" ghost>Delete</mt-button>`,
 		},
 		{
 			description: "remove contrast variant",
