@@ -93,6 +93,13 @@ func TestParseAndPrint(t *testing.T) {
 			before:      `<div><!-- special chars: & < > " ' --></div>`,
 			after:       `<div><!-- special chars: & < > " ' --></div>`,
 		},
+		{
+			description: "elements with block",
+			before:      "{% block foo %}<sw-button>Click me</sw-button>{% endblock %}",
+			after: `{% block foo %}
+	<sw-button>Click me</sw-button>
+{% endblock %}`,
+		},
 	}
 
 	for _, c := range cases {
@@ -104,17 +111,14 @@ func TestParseAndPrint(t *testing.T) {
 
 func TestChangeElement(t *testing.T) {
 	node, err := NewParser(`<sw-select @update:value="onUpdateValue"/>`)
-
 	assert.NoError(t, err)
-
 	TraverseNode(node, func(n *ElementNode) {
 		n.Tag = "mt-select"
 		for i, attr := range n.Attributes {
-			if attr.Key == "update:value" {
-				n.Attributes[i].Key = "update:modelValue"
+			if attr.Key == "@update:value" {
+				n.Attributes[i].Key = "@update:modelValue"
 			}
 		}
 	})
-
 	assert.Equal(t, `<mt-select @update:modelValue="onUpdateValue"/>`, node.Dump())
 }

@@ -100,12 +100,6 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 				}
 			}
 
-			var buf strings.Builder
-
-			for _, node := range parsed {
-				buf.WriteString(node.Dump())
-			}
-
 			return os.WriteFile(path, []byte(parsed.Dump()), os.ModePerm)
 		})
 

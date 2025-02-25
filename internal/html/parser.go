@@ -180,6 +180,42 @@ func (e *ElementNode) dump(indent int) string {
 	return builder.String()
 }
 
+// TwigBlockNode represents a twig block
+type TwigBlockNode struct {
+	Name     string
+	Children NodeList
+	Line     int
+}
+
+// Dump returns the twig block with proper formatting
+func (t *TwigBlockNode) Dump() string {
+	var builder strings.Builder
+	builder.WriteString("{% block " + t.Name + " %}")
+	if len(t.Children) > 0 {
+		builder.WriteString("\n")
+		for _, child := range t.Children {
+			if elementChild, ok := child.(*ElementNode); ok {
+				builder.WriteString(elementChild.dump(1))
+			} else {
+				builder.WriteString("\t")
+				builder.WriteString(child.Dump())
+			}
+			builder.WriteString("\n")
+		}
+	}
+	builder.WriteString("{% endblock %}")
+	return builder.String()
+}
+
+// ParentNode represents a twig parent() call
+type ParentNode struct {
+	Line int
+}
+
+func (p *ParentNode) Dump() string {
+	return "{% parent() %}"
+}
+
 // Parser holds the state for our simple parser.
 type Parser struct {
 	input  string
@@ -253,6 +289,52 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 	rawStart := p.pos
 
 	for p.pos < p.length {
+		// Check for endblock if we're parsing twig block children
+		if stopTag == "" && p.peek(2) == "{%" {
+			peek := p.input[p.pos:]
+			if strings.HasPrefix(peek, "{% endblock") {
+				break
+			}
+		}
+
+		if p.peek(2) == "{%" {
+			if p.pos > rawStart {
+				text := p.input[rawStart:p.pos]
+				if text != "" {
+					nodes = append(nodes, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart),
+					})
+				}
+			}
+
+			// Try parsing twig directives first
+			directive, err := p.parseTwigDirective()
+			if err != nil {
+				return nodes, err
+			}
+			if directive != nil {
+				nodes = append(nodes, directive)
+				rawStart = p.pos
+				continue
+			}
+
+			// If not a directive, try parsing as a block
+			startPos := p.pos
+			block, err := p.parseTwigBlock()
+			if err != nil {
+				return nodes, err
+			}
+			if block != nil {
+				nodes = append(nodes, block)
+				rawStart = p.pos
+			} else {
+				// If it wasn't a block, reset position and continue as raw text
+				p.pos = startPos
+			}
+			continue
+		}
+
 		if p.peek(4) == "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
@@ -495,7 +577,7 @@ func (p *Parser) parseTagName() string {
 // parseAttrName parses an attribute name.
 func (p *Parser) parseAttrName() string {
 	start := p.pos
-	// Accept characters until whitespace, '=', '>', or '/'.
+	// Accept characters until whitespace, '=', '>', or '/'
 	for p.pos < p.length {
 		c := p.input[p.pos]
 		if c == ' ' || c == '\n' || c == '\r' || c == '\t' ||
@@ -528,6 +610,99 @@ func (p *Parser) parseAttrValue() string {
 		p.pos++
 	}
 	return p.input[start:p.pos]
+}
+
+func (p *Parser) parseTwigDirective() (Node, error) {
+	if p.peek(2) != "{%" {
+		return nil, nil
+	}
+
+	startPos := p.pos
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+
+	// Check if it's a parent() call
+	if strings.HasPrefix(p.input[p.pos:], "parent()") {
+		p.pos += 8 // skip "parent()"
+		p.skipWhitespace()
+		if p.peek(2) != "%}" {
+			return nil, fmt.Errorf("unclosed parent directive at pos %d", startPos)
+		}
+		p.pos += 2 // skip "%}"
+		return &ParentNode{Line: p.getLineAt(startPos)}, nil
+	}
+
+	// Reset position if it's not a recognized directive
+	p.pos = startPos
+	return nil, nil
+}
+
+func (p *Parser) parseTwigBlock() (Node, error) {
+	if p.peek(2) != "{%" {
+		return nil, nil
+	}
+
+	startPos := p.pos
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+
+	// Check if it's a block
+	if !strings.HasPrefix(p.input[p.pos:], "block") {
+		p.pos = startPos
+		return nil, nil
+	}
+	p.pos += 5 // skip "block"
+	p.skipWhitespace()
+
+	// Parse block name
+	start := p.pos
+	for p.pos < p.length && p.current() != '%' && p.current() != ' ' {
+		p.pos++
+	}
+	name := strings.TrimSpace(p.input[start:p.pos])
+
+	// Skip to end of opening tag
+	for p.pos < p.length && p.peek(2) != "%}" {
+		p.pos++
+	}
+	if p.peek(2) != "%}" {
+		return nil, fmt.Errorf("unclosed block tag at pos %d", startPos)
+	}
+	p.pos += 2 // skip "%}"
+
+	// Parse children until endblock
+	children, err := p.parseNodes("")
+	if err != nil {
+		return nil, err
+	}
+
+	// Look for endblock
+	p.skipWhitespace()
+	if !strings.HasPrefix(p.input[p.pos:], "{%") {
+		return nil, fmt.Errorf("missing endblock at pos %d", p.pos)
+	}
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+	
+	if !strings.HasPrefix(p.input[p.pos:], "endblock") {
+		return nil, fmt.Errorf("missing endblock at pos %d", p.pos)
+	}
+	p.pos += 8 // skip "endblock"
+
+	// Skip to end of closing tag
+	for p.pos < p.length && p.peek(2) != "%}" {
+		p.pos++
+	}
+	if p.peek(2) != "%}" {
+		return nil, fmt.Errorf("unclosed endblock tag at pos %d", p.pos)
+	}
+	p.pos += 2 // skip "%}"
+
+	return &TwigBlockNode{
+		Name:     name,
+		Children: children,
+		Line:     p.getLineAt(startPos),
+	}, nil
 }
 
 func TraverseNode(n NodeList, f func(*ElementNode)) {
