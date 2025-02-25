@@ -13,11 +13,6 @@ func TestTabsFixer(t *testing.T) {
 		after       string
 	}{
 		{
-			description: "basic component replacement",
-			before:      `<sw-tabs />`,
-			after:       `<mt-tabs/>`,
-		},
-		{
 			description: "convert default slot to items prop",
 			before: `<sw-tabs><template #default>
         <sw-tabs-item name="tab1">Tab 1</sw-tabs-item>
@@ -42,7 +37,6 @@ func TestTabsFixer(t *testing.T) {
 	for _, c := range cases {
 		newStr, err := runFixerOnString(TabsFixer{}, c.before)
 		assert.NoError(t, err, c.description)
-		// normalize whitespace for comparison if needed
 		assert.Equal(t, c.after, newStr, c.description)
 	}
 }

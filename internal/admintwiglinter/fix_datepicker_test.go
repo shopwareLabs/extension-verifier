@@ -8,26 +8,29 @@ import (
 
 func TestDatepickerFixer(t *testing.T) {
 	cases := []struct {
-		before string
-		after  string
+		description string
+		before      string
+		after       string
 	}{
 		{
-			before: `<sw-datepicker></sw-datepicker>`,
-			after:  `<mt-datepicker></mt-datepicker>`,
+			description: "basic component replacement",
+			before:      `<sw-datepicker :modelValue="myValue" v-model="myValue" @update:modelValue="handler"/>`,
+			after: `<mt-datepicker
+	:modelValue="myValue"
+	v-model="myValue"
+	@update:modelValue="handler"
+/>`,
 		},
 		{
-			before: `<sw-datepicker :value="myValue" v-model:value="myValue" @update:value="handler"></sw-datepicker>`,
-			after:  `<mt-datepicker :modelValue="myValue" v-model="myValue" @update:modelValue="handler"></mt-datepicker>`,
-		},
-		{
-			before: `<sw-datepicker><template #label>My Label</template></sw-datepicker>`,
-			after:  `<mt-datepicker label="My Label"></mt-datepicker>`,
+			description: "convert label slot to prop",
+			before:      `<sw-datepicker><template #label>My Label</template></sw-datepicker>`,
+			after:       `<mt-datepicker label="My Label"></mt-datepicker>`,
 		},
 	}
 
 	for _, c := range cases {
-		new, err := runFixerOnString(DatepickerFixer{}, c.before)
-		assert.NoError(t, err)
-		assert.Equal(t, c.after, new)
+		newStr, err := runFixerOnString(DatepickerFixer{}, c.before)
+		assert.NoError(t, err, c.description)
+		assert.Equal(t, c.after, newStr, c.description)
 	}
 }

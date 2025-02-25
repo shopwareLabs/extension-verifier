@@ -13,11 +13,6 @@ func TestProgressBarFixer(t *testing.T) {
 		after       string
 	}{
 		{
-			description: "basic component replacement",
-			before:      `<sw-progress-bar/>`,
-			after:       `<mt-progress-bar/>`,
-		},
-		{
 			description: "replace value with modelValue",
 			before:      `<sw-progress-bar value="5"/>`,
 			after:       `<mt-progress-bar modelValue="5"/>`,

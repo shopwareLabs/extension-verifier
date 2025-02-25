@@ -38,6 +38,17 @@ func (r *RawNode) Dump() string {
 	return r.Text
 }
 
+// CommentNode represents an HTML comment
+type CommentNode struct {
+	Text string
+	Line int
+}
+
+// Dump returns the comment text with HTML comment syntax
+func (c *CommentNode) Dump() string {
+	return "<!-- " + c.Text + " -->"
+}
+
 // ElementNode represents an HTML element.
 type ElementNode struct {
 	Tag         string
@@ -49,25 +60,123 @@ type ElementNode struct {
 
 // Dump returns the HTML representation of the element and its children.
 func (e *ElementNode) Dump() string {
+	return e.dump(0)
+}
+
+// dump formats the element with the given indentation level
+func (e *ElementNode) dump(indent int) string {
 	var builder strings.Builder
+
+	// Add initial indentation
+	for i := 0; i < indent; i++ {
+		builder.WriteString("\t")
+	}
+
 	builder.WriteString("<" + e.Tag)
-	// Use attributes slice to preserve order.
-	for _, attr := range e.Attributes {
-		if attr.Value == "" {
-			builder.WriteString(" " + attr.Key)
+
+	// Add attributes on new lines with indentation if there are multiple attributes
+	if len(e.Attributes) > 0 {
+		if len(e.Attributes) == 1 {
+			// Single attribute on same line
+			attr := e.Attributes[0]
+			builder.WriteString(" ")
+			if attr.Value == "" {
+				builder.WriteString(attr.Key)
+			} else {
+				builder.WriteString(attr.Key + "=\"" + attr.Value + "\"")
+			}
 		} else {
-			builder.WriteString(" " + attr.Key + "=\"" + attr.Value + "\"")
+			// Multiple attributes on new lines
+			for _, attr := range e.Attributes {
+				builder.WriteString("\n")
+				for i := 0; i < indent+1; i++ {
+					builder.WriteString("\t")
+				}
+				if attr.Value == "" {
+					builder.WriteString(attr.Key)
+				} else {
+					builder.WriteString(attr.Key + "=\"" + attr.Value + "\"")
+				}
+			}
 		}
 	}
-	if e.SelfClosing {
+
+	if e.SelfClosing && len(e.Children) == 0 {
+		if len(e.Attributes) > 1 {
+			builder.WriteString("\n")
+			for i := 0; i < indent; i++ {
+				builder.WriteString("\t")
+			}
+		}
 		builder.WriteString("/>")
-	} else {
-		builder.WriteString(">")
+		return builder.String()
+	}
+
+	// Close opening tag
+	if len(e.Attributes) > 1 {
+		builder.WriteString("\n")
+		for i := 0; i < indent; i++ {
+			builder.WriteString("\t")
+		}
+	}
+	builder.WriteString(">")
+
+	// Special case: if there's only one child and it's a text node or comment, don't add newlines
+	if len(e.Children) == 1 {
+		if _, ok := e.Children[0].(*RawNode); ok {
+			builder.WriteString(e.Children[0].Dump())
+			builder.WriteString("</" + e.Tag + ">")
+			return builder.String()
+		}
+		if _, ok := e.Children[0].(*CommentNode); ok {
+			builder.WriteString(e.Children[0].Dump())
+			builder.WriteString("</" + e.Tag + ">")
+			return builder.String()
+		}
+	}
+
+	// Special case: if all children are comments or text nodes, keep them on same line
+	allSimpleNodes := true
+	for _, child := range e.Children {
+		if _, ok := child.(*RawNode); !ok {
+			if _, ok := child.(*CommentNode); !ok {
+				allSimpleNodes = false
+				break
+			}
+		}
+	}
+
+	if allSimpleNodes && len(e.Children) > 0 {
 		for _, child := range e.Children {
 			builder.WriteString(child.Dump())
 		}
 		builder.WriteString("</" + e.Tag + ">")
+		return builder.String()
 	}
+
+	// Add children with increased indentation
+	if len(e.Children) > 0 {
+		builder.WriteString("\n")
+		for i, child := range e.Children {
+			if elementChild, ok := child.(*ElementNode); ok {
+				builder.WriteString(elementChild.dump(indent + 1))
+			} else {
+				// For text nodes and comments, indent and write directly
+				for i := 0; i < indent+1; i++ {
+					builder.WriteString("\t")
+				}
+				builder.WriteString(child.Dump())
+			}
+			if i < len(e.Children)-1 {
+				builder.WriteString("\n")
+			}
+		}
+		builder.WriteString("\n")
+		for i := 0; i < indent; i++ {
+			builder.WriteString("\t")
+		}
+	}
+	builder.WriteString("</" + e.Tag + ">")
 	return builder.String()
 }
 
@@ -115,20 +224,27 @@ func (p *Parser) getLineAt(pos int) int {
 	return strings.Count(p.input[:pos], "\n") + 1
 }
 
-// skipComment skips an HTML comment starting at "<!--" until "-->".
-func (p *Parser) skipComment() error {
+// parseComment parses an HTML comment and returns a CommentNode
+func (p *Parser) parseComment() (*CommentNode, error) {
 	if p.peek(4) != "<!--" {
-		return nil
+		return nil, fmt.Errorf("expected comment at pos %d", p.pos)
 	}
-	// Skip the opening "<!--"
-	p.pos += 4
-	// Find the closing "-->"
+	startPos := p.pos
+	p.pos += 4 // skip "<!--"
+
+	start := p.pos
 	idx := strings.Index(p.input[p.pos:], "-->")
 	if idx == -1 {
-		return fmt.Errorf("unterminated comment starting at pos %d", p.pos-4)
+		return nil, fmt.Errorf("unterminated comment starting at pos %d", startPos)
 	}
+
+	commentText := strings.TrimSpace(p.input[start : start+idx])
 	p.pos += idx + 3 // skip past "-->"
-	return nil
+
+	return &CommentNode{
+		Text: commentText,
+		Line: p.getLineAt(startPos),
+	}, nil
 }
 
 // parseNodes parses a list of nodes until an optional stop tag (used for element children).
@@ -137,46 +253,44 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 	rawStart := p.pos
 
 	for p.pos < p.length {
-		// Check for comment start and skip it.
 		if p.peek(4) == "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}
-			if err := p.skipComment(); err != nil {
+			comment, err := p.parseComment()
+			if err != nil {
 				return nodes, err
 			}
+			nodes = append(nodes, comment)
 			rawStart = p.pos
 			continue
 		}
-		// If we’re about to hit a closing tag for the current element, break.
+
+		// If we're about to hit a closing tag for the current element, break.
 		if p.current() == '<' && p.peek(2) == "</" {
-			// Save position to check tag name.
 			savedPos := p.pos
 			p.pos += 2
 			p.skipWhitespace()
 			closingTag := p.parseTagName()
-			// Reset position so the caller can see the closing tag.
 			p.pos = savedPos
 			if stopTag != "" && closingTag == stopTag {
 				break
 			}
 		}
 
-		// If we see a '<', then try to parse an element node.
-		if p.current() == '<' {
-			// If any raw text is accumulated, add it as a RawNode.
+		if p.current() == '<' && p.peek(2) != "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}
@@ -185,18 +299,18 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 				return nodes, err
 			}
 			nodes = append(nodes, element)
-			rawStart = p.pos // mark new raw text start
+			rawStart = p.pos
 		} else {
 			p.pos++
 		}
 	}
-	// Append any remaining raw text.
+
 	if rawStart < p.pos {
 		text := p.input[rawStart:p.pos]
 		if text != "" {
 			nodes = append(nodes, &RawNode{
 				Text: text,
-				Line: p.getLineAt(rawStart), // added line attribute
+				Line: p.getLineAt(rawStart),
 			})
 		}
 	}
@@ -291,23 +405,25 @@ func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
 	rawStart := p.pos
 
 	for p.pos < p.length {
-		// Check for comment and skip.
 		if p.peek(4) == "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					children = append(children, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}
-			if err := p.skipComment(); err != nil {
+			comment, err := p.parseComment()
+			if err != nil {
 				return children, err
 			}
+			children = append(children, comment)
 			rawStart = p.pos
 			continue
 		}
+
 		// Check for a closing tag.
 		if p.current() == '<' && p.peek(2) == "</" {
 			savedPos := p.pos
@@ -328,7 +444,7 @@ func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
 					if text != "" {
 						children = append(children, &RawNode{
 							Text: text,
-							Line: p.getLineAt(rawStart), // added line attribute
+							Line: p.getLineAt(rawStart),
 						})
 					}
 				}
@@ -339,13 +455,13 @@ func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
 			}
 		}
 
-		if p.current() == '<' {
+		if p.current() == '<' && p.peek(2) != "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					children = append(children, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}

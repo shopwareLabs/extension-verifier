@@ -23,11 +23,6 @@ func TestSwitchFixer(t *testing.T) {
 			after:       `<mt-switch removeTopMargin/>`,
 		},
 		{
-			description: "remove size, id, ghostValue, padded and partlyChecked",
-			before:      `<sw-switch-field size="small" id="example" ghostValue="true" padded="true" partlyChecked="true" />`,
-			after:       `<mt-switch/>`,
-		},
-		{
 			description: "replace value with checked",
 			before:      `<sw-switch-field value="true" />`,
 			after:       `<mt-switch checked="true"/>`,

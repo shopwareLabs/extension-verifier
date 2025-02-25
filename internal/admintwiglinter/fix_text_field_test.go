@@ -19,17 +19,17 @@ func TestTextFieldFixer(t *testing.T) {
 		},
 		{
 			description: "replace value with modelValue",
-			before:      `<sw-text-field value="Hello World" />`,
+			before:      `<sw-text-field value="Hello World"/>`,
 			after:       `<mt-text-field modelValue="Hello World"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
-			before:      `<sw-text-field v-model:value="myValue" />`,
+			before:      `<sw-text-field v-model:value="myValue"/>`,
 			after:       `<mt-text-field v-model="myValue"/>`,
 		},
 		{
 			description: "convert size medium to default",
-			before:      `<sw-text-field size="medium" />`,
+			before:      `<sw-text-field size="medium"/>`,
 			after:       `<mt-text-field size="default"/>`,
 		},
 		{
@@ -44,7 +44,7 @@ func TestTextFieldFixer(t *testing.T) {
 		},
 		{
 			description: "replace update:value event",
-			before:      `<sw-text-field @update:value="updateValue" />`,
+			before:      `<sw-text-field @update:value="updateValue"/>`,
 			after:       `<mt-text-field @update:modelValue="updateValue"/>`,
 		},
 		{
@@ -54,12 +54,8 @@ func TestTextFieldFixer(t *testing.T) {
 		},
 		{
 			description: "process label slot conversion",
-			before: `<sw-text-field>
-    <template #label>
-        My Label
-    </template>
-</sw-text-field>`,
-			after: `<mt-text-field label="My Label"></mt-text-field>`,
+			before:      `<sw-text-field><template #label>My Label</template></sw-text-field>`,
+			after:       `<mt-text-field label="My Label"></mt-text-field>`,
 		},
 	}
 

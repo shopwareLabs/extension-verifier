@@ -8,8 +8,9 @@ import (
 
 func TestPopover(t *testing.T) {
 	cases := []struct {
-		before string
-		after  string
+		description string
+		before      string
+		after       string
 	}{
 		{
 			before: `<sw-popover></sw-popover>`,
@@ -30,10 +31,8 @@ func TestPopover(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		new, err := runFixerOnString(PopoverFixer{}, c.before)
-
-		assert.NoError(t, err)
-
-		assert.Equal(t, c.after, new)
+		newStr, err := runFixerOnString(PopoverFixer{}, c.before)
+		assert.NoError(t, err, c.description)
+		assert.Equal(t, c.after, newStr, c.description)
 	}
 }

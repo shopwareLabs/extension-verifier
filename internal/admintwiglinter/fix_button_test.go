@@ -30,7 +30,10 @@ func TestButtonFixer(t *testing.T) {
 		{
 			description: "replace ghost-danger variant with critical and add ghost",
 			before:      `<sw-button variant="ghost-danger">Delete</sw-button>`,
-			after:       `<mt-button variant="critical" ghost>Delete</mt-button>`,
+			after: `<mt-button
+	variant="critical"
+	ghost
+>Delete</mt-button>`,
 		},
 		{
 			description: "remove contrast variant",
