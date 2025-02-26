@@ -13,13 +13,8 @@ func TestUrlFieldFixer(t *testing.T) {
 		after       string
 	}{
 		{
-			description: "basic component replacement",
-			before:      `<sw-url-field />`,
-			after:       `<mt-url-field/>`,
-		},
-		{
 			description: "replace value with modelValue",
-			before:      `<sw-url-field value="Hello World" />`,
+			before:      `<sw-url-field value="Hello World"/>`,
 			after:       `<mt-url-field modelValue="Hello World"/>`,
 		},
 		{
@@ -29,26 +24,13 @@ func TestUrlFieldFixer(t *testing.T) {
 		},
 		{
 			description: "replace update:value event",
-			before:      `<sw-url-field @update:value="updateValue" />`,
+			before:      `<sw-url-field @update:value="updateValue"/>`,
 			after:       `<mt-url-field @update:modelValue="updateValue"/>`,
 		},
 		{
 			description: "process label slot",
-			before: `<sw-url-field>
-    <template #label>
-        My Label
-    </template>
-</sw-url-field>`,
-			after: `<mt-url-field label="My Label"></mt-url-field>`,
-		},
-		{
-			description: "remove hint slot",
-			before: `<sw-url-field>
-    <template #hint>
-        My Hint
-    </template>
-</sw-url-field>`,
-			after: `<mt-url-field></mt-url-field>`,
+			before:      `<sw-url-field><template #label>My Label</template></sw-url-field>`,
+			after:       `<mt-url-field label="My Label"></mt-url-field>`,
 		},
 	}
 

@@ -8,8 +8,9 @@ import (
 
 func TestSkeletonBarFixer(t *testing.T) {
 	cases := []struct {
-		before string
-		after  string
+		description string
+		before      string
+		after       string
 	}{
 		{
 			before: `<sw-skeleton-bar>Hello World</sw-skeleton-bar>`,
@@ -19,7 +20,7 @@ func TestSkeletonBarFixer(t *testing.T) {
 
 	for _, c := range cases {
 		newStr, err := runFixerOnString(SkeletonBarFixer{}, c.before)
-		assert.NoError(t, err)
-		assert.Equal(t, c.after, newStr)
+		assert.NoError(t, err, c.description)
+		assert.Equal(t, c.after, newStr, c.description)
 	}
 }

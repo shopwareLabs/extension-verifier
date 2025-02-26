@@ -21,10 +21,46 @@ type NodeList []Node
 
 func (nodeList NodeList) Dump() string {
 	var builder strings.Builder
-	for _, node := range nodeList {
+	for i, node := range nodeList {
+		if _, ok := node.(*CommentNode); ok {
+			// Don't add newlines for comments
+			builder.WriteString(node.Dump())
+			continue
+		}
+		if i > 0 {
+			// Add newline between non-comment nodes if not first
+			if _, ok := nodeList[i-1].(*CommentNode); !ok {
+				builder.WriteString("\n")
+			}
+		}
 		builder.WriteString(node.Dump())
 	}
-	return builder.String()
+
+	// Handle the special case where we have adjacent template elements
+	result := builder.String()
+
+	// First, normalize to ensure no more than two consecutive newlines anywhere
+	for strings.Contains(result, "\n\n\n") {
+		result = strings.ReplaceAll(result, "\n\n\n", "\n\n")
+	}
+
+	// Then ensure exactly one empty line between template elements
+	result = strings.ReplaceAll(result, "</template>\n<template>", "</template>\n\n<template>")
+
+	// Also handle indented template elements (nested in other elements)
+	result = strings.ReplaceAll(result, "</template>\n\t<template>", "</template>\n\n\t<template>")
+	result = strings.ReplaceAll(result, "</template>\n\t\t<template>", "</template>\n\n\t\t<template>")
+	result = strings.ReplaceAll(result, "</template>\n\t\t\t<template>", "</template>\n\n\t\t\t<template>")
+
+	return result
+}
+
+// Helper function to check if a node is a template element
+func isTemplateElement(node Node) bool {
+	if elem, ok := node.(*ElementNode); ok {
+		return elem.Tag == "template"
+	}
+	return false
 }
 
 // RawNode holds unchanged text.
@@ -38,6 +74,17 @@ func (r *RawNode) Dump() string {
 	return r.Text
 }
 
+// CommentNode represents an HTML comment
+type CommentNode struct {
+	Text string
+	Line int
+}
+
+// Dump returns the comment text with HTML comment syntax
+func (c *CommentNode) Dump() string {
+	return "<!-- " + c.Text + " -->"
+}
+
 // ElementNode represents an HTML element.
 type ElementNode struct {
 	Tag         string
@@ -49,26 +96,212 @@ type ElementNode struct {
 
 // Dump returns the HTML representation of the element and its children.
 func (e *ElementNode) Dump() string {
+	return e.dump(0)
+}
+
+// dump formats the element with the given indentation level
+func (e *ElementNode) dump(indent int) string {
 	var builder strings.Builder
+
+	// Add initial indentation
+	for i := 0; i < indent; i++ {
+		builder.WriteString("\t")
+	}
+
 	builder.WriteString("<" + e.Tag)
-	// Use attributes slice to preserve order.
-	for _, attr := range e.Attributes {
-		if attr.Value == "" {
-			builder.WriteString(" " + attr.Key)
+
+	// Add attributes
+	if len(e.Attributes) > 0 {
+		if len(e.Attributes) == 1 {
+			attr := e.Attributes[0]
+			attributeStr := ""
+			if attr.Value == "" {
+				attributeStr = attr.Key
+			} else {
+				attributeStr = attr.Key + "=\"" + attr.Value + "\""
+			}
+
+			if len(attributeStr) > 60 {
+				builder.WriteString("\n")
+				for j := 0; j < indent+1; j++ {
+					builder.WriteString("\t")
+				}
+				builder.WriteString(attributeStr)
+				builder.WriteString("\n")
+				for i := 0; i < indent; i++ {
+					builder.WriteString("\t")
+				}
+			} else {
+				builder.WriteString(" ")
+				builder.WriteString(attributeStr)
+			}
 		} else {
-			builder.WriteString(" " + attr.Key + "=\"" + attr.Value + "\"")
+			for _, attr := range e.Attributes {
+				builder.WriteString("\n")
+				for j := 0; j < indent+1; j++ {
+					builder.WriteString("\t")
+				}
+				if attr.Value == "" {
+					builder.WriteString(attr.Key)
+				} else {
+					builder.WriteString(attr.Key + "=\"" + attr.Value + "\"")
+				}
+			}
+			builder.WriteString("\n")
+			for i := 0; i < indent; i++ {
+				builder.WriteString("\t")
+			}
 		}
 	}
+
+	// Handle self-closing tags
 	if e.SelfClosing {
 		builder.WriteString("/>")
-	} else {
-		builder.WriteString(">")
-		for _, child := range e.Children {
-			builder.WriteString(child.Dump())
-		}
-		builder.WriteString("</" + e.Tag + ">")
+		return builder.String()
 	}
+
+	builder.WriteString(">")
+
+	// Handle children
+	if len(e.Children) > 0 {
+		// Special case: if all children are text/comments, keep them on same line
+		allSimpleNodes := true
+		for _, child := range e.Children {
+			if _, ok := child.(*RawNode); !ok {
+				if _, ok := child.(*CommentNode); !ok {
+					allSimpleNodes = false
+					break
+				}
+			}
+		}
+
+		if allSimpleNodes {
+			containsNewLines := false
+			var lastRawText string
+
+			// Check if any raw node contains newlines and get the last raw text
+			for _, child := range e.Children {
+				if raw, ok := child.(*RawNode); ok {
+					if strings.Contains(raw.Text, "\n") {
+						containsNewLines = true
+					}
+					lastRawText = raw.Text
+				}
+			}
+
+			if containsNewLines {
+				// Handle case where raw text contains newlines (like template content)
+				for _, child := range e.Children {
+					builder.WriteString(child.Dump())
+				}
+
+				// Only add newline if the last raw text doesn't already end with one
+				if !strings.HasSuffix(lastRawText, "\n") {
+					builder.WriteString("\n")
+				}
+
+				for i := 0; i < indent; i++ {
+					builder.WriteString("\t")
+				}
+			} else {
+				// Regular simple nodes on the same line
+				for _, child := range e.Children {
+					builder.WriteString(child.Dump())
+				}
+			}
+		} else {
+			// Filter out empty nodes and normalize newlines
+			var nonEmptyChildren NodeList
+			for _, child := range e.Children {
+				if raw, ok := child.(*RawNode); ok {
+					if strings.TrimSpace(raw.Text) != "" {
+						nonEmptyChildren = append(nonEmptyChildren, raw)
+					}
+				} else {
+					nonEmptyChildren = append(nonEmptyChildren, child)
+				}
+			}
+
+			// Check for template elements and add extra newlines between them
+			for i, child := range nonEmptyChildren {
+				builder.WriteString("\n")
+
+				// Add an extra newline between template elements
+				if i > 0 && isTemplateElement(child) && isTemplateElement(nonEmptyChildren[i-1]) {
+					builder.WriteString("\n")
+				}
+
+				if elementChild, ok := child.(*ElementNode); ok {
+					builder.WriteString(elementChild.dump(indent + 1))
+				} else {
+					for j := 0; j < indent+1; j++ {
+						builder.WriteString("\t")
+					}
+					builder.WriteString(strings.TrimSpace(child.Dump()))
+				}
+			}
+			builder.WriteString("\n")
+			for i := 0; i < indent; i++ {
+				builder.WriteString("\t")
+			}
+		}
+	}
+
+	builder.WriteString("</" + e.Tag + ">")
 	return builder.String()
+}
+
+// TwigBlockNode represents a twig block
+type TwigBlockNode struct {
+	Name     string
+	Children NodeList
+	Line     int
+}
+
+// Dump returns the twig block with proper formatting
+func (t *TwigBlockNode) Dump() string {
+	var builder strings.Builder
+	builder.WriteString("{% block " + t.Name + " %}")
+
+	// Filter out empty nodes and normalize newlines
+	var nonEmptyChildren NodeList
+	for _, child := range t.Children {
+		if raw, ok := child.(*RawNode); ok {
+			if strings.TrimSpace(raw.Text) != "" {
+				nonEmptyChildren = append(nonEmptyChildren, raw)
+			}
+		} else {
+			nonEmptyChildren = append(nonEmptyChildren, child)
+		}
+	}
+
+	if len(nonEmptyChildren) > 0 {
+		builder.WriteString("\n")
+		for i, child := range nonEmptyChildren {
+			if elementChild, ok := child.(*ElementNode); ok {
+				builder.WriteString(elementChild.dump(1))
+			} else {
+				builder.WriteString("\t")
+				builder.WriteString(strings.TrimSpace(child.Dump()))
+			}
+			if i < len(nonEmptyChildren)-1 {
+				// Add an extra newline between elements
+				builder.WriteString("\n\n")
+			}
+		}
+		builder.WriteString("\n")
+	}
+	builder.WriteString("{% endblock %}")
+	return builder.String()
+}
+
+// ParentNode represents a twig parent() call
+type ParentNode struct {
+	Line int
+}
+
+func (p *ParentNode) Dump() string {
+	return "{% parent() %}"
 }
 
 // Parser holds the state for our simple parser.
@@ -115,20 +348,27 @@ func (p *Parser) getLineAt(pos int) int {
 	return strings.Count(p.input[:pos], "\n") + 1
 }
 
-// skipComment skips an HTML comment starting at "<!--" until "-->".
-func (p *Parser) skipComment() error {
+// parseComment parses an HTML comment and returns a CommentNode
+func (p *Parser) parseComment() (*CommentNode, error) {
 	if p.peek(4) != "<!--" {
-		return nil
+		return nil, fmt.Errorf("expected comment at pos %d", p.pos)
 	}
-	// Skip the opening "<!--"
-	p.pos += 4
-	// Find the closing "-->"
+	startPos := p.pos
+	p.pos += 4 // skip "<!--"
+
+	start := p.pos
 	idx := strings.Index(p.input[p.pos:], "-->")
 	if idx == -1 {
-		return fmt.Errorf("unterminated comment starting at pos %d", p.pos-4)
+		return nil, fmt.Errorf("unterminated comment starting at pos %d", startPos)
 	}
+
+	commentText := strings.TrimSpace(p.input[start : start+idx])
 	p.pos += idx + 3 // skip past "-->"
-	return nil
+
+	return &CommentNode{
+		Text: commentText,
+		Line: p.getLineAt(startPos),
+	}, nil
 }
 
 // parseNodes parses a list of nodes until an optional stop tag (used for element children).
@@ -137,46 +377,90 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 	rawStart := p.pos
 
 	for p.pos < p.length {
-		// Check for comment start and skip it.
+		// Check for endblock if we're parsing twig block children
+		if stopTag == "" && p.peek(2) == "{%" {
+			peek := p.input[p.pos:]
+			if strings.HasPrefix(peek, "{% endblock") {
+				break
+			}
+		}
+
+		if p.peek(2) == "{%" {
+			if p.pos > rawStart {
+				text := p.input[rawStart:p.pos]
+				if text != "" {
+					nodes = append(nodes, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart),
+					})
+				}
+			}
+
+			// Try parsing twig directives first
+			directive, err := p.parseTwigDirective()
+			if err != nil {
+				return nodes, err
+			}
+			if directive != nil {
+				nodes = append(nodes, directive)
+				rawStart = p.pos
+				continue
+			}
+
+			// If not a directive, try parsing as a block
+			startPos := p.pos
+			block, err := p.parseTwigBlock()
+			if err != nil {
+				return nodes, err
+			}
+			if block != nil {
+				nodes = append(nodes, block)
+				rawStart = p.pos
+			} else {
+				// If it wasn't a block, reset position and continue as raw text
+				p.pos = startPos
+			}
+			continue
+		}
+
 		if p.peek(4) == "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}
-			if err := p.skipComment(); err != nil {
+			comment, err := p.parseComment()
+			if err != nil {
 				return nodes, err
 			}
+			nodes = append(nodes, comment)
 			rawStart = p.pos
 			continue
 		}
-		// If we’re about to hit a closing tag for the current element, break.
+
+		// If we're about to hit a closing tag for the current element, break.
 		if p.current() == '<' && p.peek(2) == "</" {
-			// Save position to check tag name.
 			savedPos := p.pos
 			p.pos += 2
 			p.skipWhitespace()
 			closingTag := p.parseTagName()
-			// Reset position so the caller can see the closing tag.
 			p.pos = savedPos
 			if stopTag != "" && closingTag == stopTag {
 				break
 			}
 		}
 
-		// If we see a '<', then try to parse an element node.
-		if p.current() == '<' {
-			// If any raw text is accumulated, add it as a RawNode.
+		if p.current() == '<' && p.peek(2) != "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}
@@ -185,18 +469,18 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 				return nodes, err
 			}
 			nodes = append(nodes, element)
-			rawStart = p.pos // mark new raw text start
+			rawStart = p.pos
 		} else {
 			p.pos++
 		}
 	}
-	// Append any remaining raw text.
+
 	if rawStart < p.pos {
 		text := p.input[rawStart:p.pos]
 		if text != "" {
 			nodes = append(nodes, &RawNode{
 				Text: text,
-				Line: p.getLineAt(rawStart), // added line attribute
+				Line: p.getLineAt(rawStart),
 			})
 		}
 	}
@@ -291,23 +575,25 @@ func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
 	rawStart := p.pos
 
 	for p.pos < p.length {
-		// Check for comment and skip.
 		if p.peek(4) == "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					children = append(children, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}
-			if err := p.skipComment(); err != nil {
+			comment, err := p.parseComment()
+			if err != nil {
 				return children, err
 			}
+			children = append(children, comment)
 			rawStart = p.pos
 			continue
 		}
+
 		// Check for a closing tag.
 		if p.current() == '<' && p.peek(2) == "</" {
 			savedPos := p.pos
@@ -328,7 +614,7 @@ func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
 					if text != "" {
 						children = append(children, &RawNode{
 							Text: text,
-							Line: p.getLineAt(rawStart), // added line attribute
+							Line: p.getLineAt(rawStart),
 						})
 					}
 				}
@@ -339,13 +625,13 @@ func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
 			}
 		}
 
-		if p.current() == '<' {
+		if p.current() == '<' && p.peek(2) != "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
 				if text != "" {
 					children = append(children, &RawNode{
 						Text: text,
-						Line: p.getLineAt(rawStart), // added line attribute
+						Line: p.getLineAt(rawStart),
 					})
 				}
 			}
@@ -379,7 +665,7 @@ func (p *Parser) parseTagName() string {
 // parseAttrName parses an attribute name.
 func (p *Parser) parseAttrName() string {
 	start := p.pos
-	// Accept characters until whitespace, '=', '>', or '/'.
+	// Accept characters until whitespace, '=', '>', or '/'
 	for p.pos < p.length {
 		c := p.input[p.pos]
 		if c == ' ' || c == '\n' || c == '\r' || c == '\t' ||
@@ -412,6 +698,99 @@ func (p *Parser) parseAttrValue() string {
 		p.pos++
 	}
 	return p.input[start:p.pos]
+}
+
+func (p *Parser) parseTwigDirective() (Node, error) {
+	if p.peek(2) != "{%" {
+		return nil, nil
+	}
+
+	startPos := p.pos
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+
+	// Check if it's a parent() call
+	if strings.HasPrefix(p.input[p.pos:], "parent()") {
+		p.pos += 8 // skip "parent()"
+		p.skipWhitespace()
+		if p.peek(2) != "%}" {
+			return nil, fmt.Errorf("unclosed parent directive at pos %d", startPos)
+		}
+		p.pos += 2 // skip "%}"
+		return &ParentNode{Line: p.getLineAt(startPos)}, nil
+	}
+
+	// Reset position if it's not a recognized directive
+	p.pos = startPos
+	return nil, nil
+}
+
+func (p *Parser) parseTwigBlock() (Node, error) {
+	if p.peek(2) != "{%" {
+		return nil, nil
+	}
+
+	startPos := p.pos
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+
+	// Check if it's a block
+	if !strings.HasPrefix(p.input[p.pos:], "block") {
+		p.pos = startPos
+		return nil, nil
+	}
+	p.pos += 5 // skip "block"
+	p.skipWhitespace()
+
+	// Parse block name
+	start := p.pos
+	for p.pos < p.length && p.current() != '%' && p.current() != ' ' {
+		p.pos++
+	}
+	name := strings.TrimSpace(p.input[start:p.pos])
+
+	// Skip to end of opening tag
+	for p.pos < p.length && p.peek(2) != "%}" {
+		p.pos++
+	}
+	if p.peek(2) != "%}" {
+		return nil, fmt.Errorf("unclosed block tag at pos %d", startPos)
+	}
+	p.pos += 2 // skip "%}"
+
+	// Parse children until endblock
+	children, err := p.parseNodes("")
+	if err != nil {
+		return nil, err
+	}
+
+	// Look for endblock
+	p.skipWhitespace()
+	if !strings.HasPrefix(p.input[p.pos:], "{%") {
+		return nil, fmt.Errorf("missing endblock at pos %d", p.pos)
+	}
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+
+	if !strings.HasPrefix(p.input[p.pos:], "endblock") {
+		return nil, fmt.Errorf("missing endblock at pos %d", p.pos)
+	}
+	p.pos += 8 // skip "endblock"
+
+	// Skip to end of closing tag
+	for p.pos < p.length && p.peek(2) != "%}" {
+		p.pos++
+	}
+	if p.peek(2) != "%}" {
+		return nil, fmt.Errorf("unclosed endblock tag at pos %d", p.pos)
+	}
+	p.pos += 2 // skip "%}"
+
+	return &TwigBlockNode{
+		Name:     name,
+		Children: children,
+		Line:     p.getLineAt(startPos),
+	}, nil
 }
 
 func TraverseNode(n NodeList, f func(*ElementNode)) {

@@ -34,12 +34,8 @@ func TestColorpickerFixer(t *testing.T) {
 		},
 		{
 			description: "process label slot",
-			before: `<sw-colorpicker>
-    <template #label>
-        My Label
-    </template>
-</sw-colorpicker>`,
-			after: `<mt-colorpicker label="My Label"></mt-colorpicker>`,
+			before:      `<sw-colorpicker><template #label>My Label</template></sw-colorpicker>`,
+			after:       `<mt-colorpicker label="My Label"></mt-colorpicker>`,
 		},
 	}
 

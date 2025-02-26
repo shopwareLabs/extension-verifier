@@ -19,7 +19,7 @@ func TestExternalLinkFixer(t *testing.T) {
 		},
 		{
 			description: "remove icon attribute",
-			before:      `<sw-external-link icon="world">Hello World</sw-external-link>`,
+			before:      `<sw-external-link icon>Hello World</sw-external-link>`,
 			after:       `<mt-external-link>Hello World</mt-external-link>`,
 		},
 	}

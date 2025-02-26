@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sergi/go-diff/diffmatchpatch"
+
 	"github.com/shopware/extension-verifier/internal/admintwiglinter"
 	"github.com/shopware/extension-verifier/internal/html"
 	"github.com/shopware/shopware-cli/version"
@@ -100,12 +102,6 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 				}
 			}
 
-			var buf strings.Builder
-
-			for _, node := range parsed {
-				buf.WriteString(node.Dump())
-			}
-
 			return os.WriteFile(path, []byte(parsed.Dump()), os.ModePerm)
 		})
 
@@ -118,7 +114,51 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 }
 
 func (a AdminTwigLinter) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
+	dmp := diffmatchpatch.New()
+
+	for _, p := range GetAdminFolders(config) {
+		err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if d.IsDir() {
+				return nil
+			}
+
+			if filepath.Ext(path) != ".twig" {
+				return nil
+			}
+
+			file, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+
+			parsed, err := html.NewParser(string(file))
+
+			if err != nil {
+				return fmt.Errorf("failed to parse %s: %w", path, err)
+			}
+
+			if dryRun {
+				diffs := dmp.DiffMain(string(file), parsed.Dump(), false)
+
+				fmt.Println(dmp.DiffPrettyText(diffs))
+
+				return nil
+			} else {
+				return os.WriteFile(path, []byte(parsed.Dump()), os.ModePerm)
+			}
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+
 }
 
 func init() {

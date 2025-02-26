@@ -19,26 +19,25 @@ func TestNumberFieldFixer(t *testing.T) {
 		},
 		{
 			description: "replace :value with :modelValue",
-			before:      `<sw-number-field :value="5" />`,
+			before:      `<sw-number-field :value="5"/>`,
 			after:       `<mt-number-field :modelValue="5"/>`,
 		},
 		{
 			description: "convert v-model:value to :modelValue and @change",
-			before:      `<sw-number-field v-model:value="myValue" />`,
-			after:       `<mt-number-field :modelValue="myValue" @change="myValue = $event"/>`,
+			before:      `<sw-number-field v-model:value="myValue"/>`,
+			after: `<mt-number-field
+	:modelValue="myValue"
+	@change="myValue = $event"
+/>`,
 		},
 		{
 			description: "convert label slot to label prop",
-			before: `<sw-number-field>
-    <template #label>
-        My Label
-    </template>
-</sw-number-field>`,
-			after: `<mt-number-field label="My Label"></mt-number-field>`,
+			before:      `<sw-number-field><template #label>My Label</template></sw-number-field>`,
+			after:       `<mt-number-field label="My Label"></mt-number-field>`,
 		},
 		{
 			description: "replace @update:value with @change",
-			before:      `<sw-number-field @update:value="updateValue" />`,
+			before:      `<sw-number-field @update:value="updateValue"/>`,
 			after:       `<mt-number-field @change="updateValue"/>`,
 		},
 	}

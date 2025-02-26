@@ -19,7 +19,7 @@ func TestPasswordFieldFixer(t *testing.T) {
 		},
 		{
 			description: "replace value with modelValue",
-			before:      `<sw-password-field value="Hello World" />`,
+			before:      `<sw-password-field value="Hello World"/>`,
 			after:       `<mt-password-field modelValue="Hello World"/>`,
 		},
 		{
