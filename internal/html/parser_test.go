@@ -203,6 +203,11 @@ func TestParseAndPrint(t *testing.T) {
 	</template>
 </sw-page>`,
 		},
+		{
+			description: "starting tag in html node",
+			before:      "<p>{{ $tc('swag-customized-products.detail.tabGeneral.cardExclusion.emptyTitle', (searchTerm.length <= 0) ? 1 : 0) }}</p>",
+			after:       "<p>{{ $tc('swag-customized-products.detail.tabGeneral.cardExclusion.emptyTitle', (searchTerm.length <= 0) ? 1 : 0) }}</p>",
+		},
 	}
 
 	for _, c := range cases {

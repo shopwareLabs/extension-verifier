@@ -85,6 +85,17 @@ func (c *CommentNode) Dump() string {
 	return "<!-- " + c.Text + " -->"
 }
 
+// TemplateExpressionNode represents a {{...}} template expression
+type TemplateExpressionNode struct {
+	Expression string
+	Line       int
+}
+
+// Dump returns the template expression with {{ }} delimiters
+func (t *TemplateExpressionNode) Dump() string {
+	return "{{" + t.Expression + "}}"
+}
+
 // ElementNode represents an HTML element.
 type ElementNode struct {
 	Tag         string
@@ -164,13 +175,15 @@ func (e *ElementNode) dump(indent int) string {
 
 	// Handle children
 	if len(e.Children) > 0 {
-		// Special case: if all children are text/comments, keep them on same line
+		// Special case: if all children are text/comments/template expressions, keep them on same line
 		allSimpleNodes := true
 		for _, child := range e.Children {
 			if _, ok := child.(*RawNode); !ok {
 				if _, ok := child.(*CommentNode); !ok {
-					allSimpleNodes = false
-					break
+					if _, ok := child.(*TemplateExpressionNode); !ok {
+						allSimpleNodes = false
+						break
+					}
 				}
 			}
 		}
@@ -423,6 +436,28 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 			continue
 		}
 
+		// Parse template expressions {{ ... }}
+		if p.peek(2) == "{{" {
+			if p.pos > rawStart {
+				text := p.input[rawStart:p.pos]
+				if text != "" {
+					nodes = append(nodes, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart),
+					})
+				}
+			}
+
+			expression, err := p.parseTemplateExpression()
+			if err != nil {
+				return nodes, err
+			}
+
+			nodes = append(nodes, expression)
+			rawStart = p.pos
+			continue
+		}
+
 		if p.peek(4) == "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
@@ -508,6 +543,7 @@ func (p *Parser) parseElement() (Node, error) {
 
 	tagName := p.parseTagName()
 	if tagName == "" {
+		fmt.Println(p.input[startPos-20 : p.pos])
 		return nil, fmt.Errorf("empty tag name at pos %d", p.pos)
 	}
 
@@ -590,6 +626,28 @@ func (p *Parser) parseElementChildren(tag string) (NodeList, error) {
 				return children, err
 			}
 			children = append(children, comment)
+			rawStart = p.pos
+			continue
+		}
+
+		// Parse template expressions {{ ... }}
+		if p.peek(2) == "{{" {
+			if p.pos > rawStart {
+				text := p.input[rawStart:p.pos]
+				if text != "" {
+					children = append(children, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart),
+					})
+				}
+			}
+
+			expression, err := p.parseTemplateExpression()
+			if err != nil {
+				return children, err
+			}
+
+			children = append(children, expression)
 			rawStart = p.pos
 			continue
 		}
@@ -720,6 +778,17 @@ func (p *Parser) parseTwigDirective() (Node, error) {
 		return &ParentNode{Line: p.getLineAt(startPos)}, nil
 	}
 
+	// Handle {% parent %} directive (without parentheses)
+	if strings.HasPrefix(p.input[p.pos:], "parent") {
+		p.pos += 6 // skip "parent"
+		p.skipWhitespace()
+		if p.peek(2) != "%}" {
+			return nil, fmt.Errorf("unclosed parent directive at pos %d", startPos)
+		}
+		p.pos += 2 // skip "%}"
+		return &ParentNode{Line: p.getLineAt(startPos)}, nil
+	}
+
 	// Reset position if it's not a recognized directive
 	p.pos = startPos
 	return nil, nil
@@ -793,6 +862,31 @@ func (p *Parser) parseTwigBlock() (Node, error) {
 	}, nil
 }
 
+// parseTemplateExpression parses a {{...}} template expression and returns a TemplateExpressionNode
+func (p *Parser) parseTemplateExpression() (*TemplateExpressionNode, error) {
+	if p.peek(2) != "{{" {
+		return nil, fmt.Errorf("expected template expression at pos %d", p.pos)
+	}
+
+	startPos := p.pos
+	p.pos += 2 // skip "{{"
+
+	// Find the closing "}}"
+	start := p.pos
+	idx := strings.Index(p.input[p.pos:], "}}")
+	if idx == -1 {
+		return nil, fmt.Errorf("unterminated template expression starting at pos %d", startPos)
+	}
+
+	expression := p.input[start : start+idx]
+	p.pos += idx + 2 // skip past "}}"
+
+	return &TemplateExpressionNode{
+		Expression: expression,
+		Line:       p.getLineAt(startPos),
+	}, nil
+}
+
 func TraverseNode(n NodeList, f func(*ElementNode)) {
 	for _, node := range n {
 		switch node := node.(type) {
@@ -801,6 +895,11 @@ func TraverseNode(n NodeList, f func(*ElementNode)) {
 			for _, child := range node.Children {
 				TraverseNode(NodeList{child}, f)
 			}
+		case *TwigBlockNode:
+			TraverseNode(node.Children, f)
+		case *TemplateExpressionNode:
+			// Template expressions don't have children to traverse
+			continue
 		}
 	}
 }

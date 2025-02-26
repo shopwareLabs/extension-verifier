@@ -93,7 +93,7 @@ export default {
                 const callExpression = parent;
     
                 // Component.register() or Component.extend()
-                if (callExpression.callee.object.name === 'Component') {
+                if (callExpression.callee.object.name === 'Component' && callExpression.callee.property.name === 'register') {
                     return true;
                 }
     
@@ -133,6 +133,10 @@ export default {
                     node: programNode,
                     message: `Event(s) ${stringEmitEvents} not defined in the emits option.`,
                     fix(fixer) {
+                        if (!componentNode) {
+                            return;
+                        }
+
                         // no emits field in the component
                         if (!emitsNode) {
                             return insertNewEmitsNode(fixer, stringEmitEvents);
