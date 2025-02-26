@@ -35,7 +35,32 @@ func (nodeList NodeList) Dump() string {
 		}
 		builder.WriteString(node.Dump())
 	}
-	return builder.String()
+
+	// Handle the special case where we have adjacent template elements
+	result := builder.String()
+
+	// First, normalize to ensure no more than two consecutive newlines anywhere
+	for strings.Contains(result, "\n\n\n") {
+		result = strings.ReplaceAll(result, "\n\n\n", "\n\n")
+	}
+
+	// Then ensure exactly one empty line between template elements
+	result = strings.ReplaceAll(result, "</template>\n<template>", "</template>\n\n<template>")
+
+	// Also handle indented template elements (nested in other elements)
+	result = strings.ReplaceAll(result, "</template>\n\t<template>", "</template>\n\n\t<template>")
+	result = strings.ReplaceAll(result, "</template>\n\t\t<template>", "</template>\n\n\t\t<template>")
+	result = strings.ReplaceAll(result, "</template>\n\t\t\t<template>", "</template>\n\n\t\t\t<template>")
+
+	return result
+}
+
+// Helper function to check if a node is a template element
+func isTemplateElement(node Node) bool {
+	if elem, ok := node.(*ElementNode); ok {
+		return elem.Tag == "template"
+	}
+	return false
 }
 
 // RawNode holds unchanged text.
@@ -197,8 +222,15 @@ func (e *ElementNode) dump(indent int) string {
 				}
 			}
 
-			for _, child := range nonEmptyChildren {
+			// Check for template elements and add extra newlines between them
+			for i, child := range nonEmptyChildren {
 				builder.WriteString("\n")
+
+				// Add an extra newline between template elements
+				if i > 0 && isTemplateElement(child) && isTemplateElement(nonEmptyChildren[i-1]) {
+					builder.WriteString("\n")
+				}
+
 				if elementChild, ok := child.(*ElementNode); ok {
 					builder.WriteString(elementChild.dump(indent + 1))
 				} else {

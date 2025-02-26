@@ -167,6 +167,42 @@ func TestParseAndPrint(t *testing.T) {
 	</router-link>
 </template>`,
 		},
+		{
+			description: "multiple template elements should have a newline between them",
+			before: `<template>
+	<div>Template 1</div>
+</template>
+<template>
+	<div>Template 2</div>
+</template>`,
+			after: `<template>
+	<div>Template 1</div>
+</template>
+
+<template>
+	<div>Template 2</div>
+</template>`,
+		},
+		{
+			description: "multiple template elements should have a newline between them with root element",
+			before: `<sw-page>
+<template>
+	<div>Template 1</div>
+</template>
+<template>
+	<div>Template 2</div>
+</template>
+</sw-page>`,
+			after: `<sw-page>
+	<template>
+		<div>Template 1</div>
+	</template>
+
+	<template>
+		<div>Template 2</div>
+	</template>
+</sw-page>`,
+		},
 	}
 
 	for _, c := range cases {
