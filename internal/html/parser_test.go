@@ -100,6 +100,73 @@ func TestParseAndPrint(t *testing.T) {
 	<sw-button>Click me</sw-button>
 {% endblock %}`,
 		},
+		{
+			description: "multi line breaks get removed",
+			before: `{% block test %}
+
+
+<sw-button>Click me</sw-button>
+
+{% endblock %}`,
+			after: `{% block test %}
+	<sw-button>Click me</sw-button>
+{% endblock %}`,
+		},
+
+		{
+			description: "multi line between elements only one",
+			before: `{% block test %}
+
+
+<sw-button>Click me</sw-button>
+
+
+<sw-button>Click me</sw-button>
+
+{% endblock %}`,
+			after: `{% block test %}
+	<sw-button>Click me</sw-button>
+
+	<sw-button>Click me</sw-button>
+{% endblock %}`,
+		},
+		{
+			description: "multi line between only elements",
+			before: `<template>
+
+
+<foo>
+	<bar/>
+</foo>
+
+
+</template>`,
+			after: `<template>
+	<foo>
+		<bar/>
+	</foo>
+</template>`,
+		},
+		{
+			description: "long attribute is on new line",
+			before:      `<sw-button link="{ name: 'sw.product.detail.pseudovariants', params: { productId: product.id } }"/>`,
+			after: `<sw-button
+	link="{ name: 'sw.product.detail.pseudovariants', params: { productId: product.id } }"
+/>`,
+		},
+		{
+			description: "html element with content gets correct formatting",
+			before: `<template>
+<router-link>
+{{ item.mainPseudovariant.product.translated.name }}
+</router-link>
+</template>`,
+			after: `<template>
+	<router-link>
+{{ item.mainPseudovariant.product.translated.name }}
+	</router-link>
+</template>`,
+		},
 	}
 
 	for _, c := range cases {

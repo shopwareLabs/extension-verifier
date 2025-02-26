@@ -21,7 +21,18 @@ type NodeList []Node
 
 func (nodeList NodeList) Dump() string {
 	var builder strings.Builder
-	for _, node := range nodeList {
+	for i, node := range nodeList {
+		if _, ok := node.(*CommentNode); ok {
+			// Don't add newlines for comments
+			builder.WriteString(node.Dump())
+			continue
+		}
+		if i > 0 {
+			// Add newline between non-comment nodes if not first
+			if _, ok := nodeList[i-1].(*CommentNode); !ok {
+				builder.WriteString("\n")
+			}
+		}
 		builder.WriteString(node.Dump())
 	}
 	return builder.String()
@@ -74,22 +85,35 @@ func (e *ElementNode) dump(indent int) string {
 
 	builder.WriteString("<" + e.Tag)
 
-	// Add attributes on new lines with indentation if there are multiple attributes
+	// Add attributes
 	if len(e.Attributes) > 0 {
 		if len(e.Attributes) == 1 {
-			// Single attribute on same line
 			attr := e.Attributes[0]
-			builder.WriteString(" ")
+			attributeStr := ""
 			if attr.Value == "" {
-				builder.WriteString(attr.Key)
+				attributeStr = attr.Key
 			} else {
-				builder.WriteString(attr.Key + "=\"" + attr.Value + "\"")
+				attributeStr = attr.Key + "=\"" + attr.Value + "\""
+			}
+
+			if len(attributeStr) > 60 {
+				builder.WriteString("\n")
+				for j := 0; j < indent+1; j++ {
+					builder.WriteString("\t")
+				}
+				builder.WriteString(attributeStr)
+				builder.WriteString("\n")
+				for i := 0; i < indent; i++ {
+					builder.WriteString("\t")
+				}
+			} else {
+				builder.WriteString(" ")
+				builder.WriteString(attributeStr)
 			}
 		} else {
-			// Multiple attributes on new lines
 			for _, attr := range e.Attributes {
 				builder.WriteString("\n")
-				for i := 0; i < indent+1; i++ {
+				for j := 0; j < indent+1; j++ {
 					builder.WriteString("\t")
 				}
 				if attr.Value == "" {
@@ -98,84 +122,99 @@ func (e *ElementNode) dump(indent int) string {
 					builder.WriteString(attr.Key + "=\"" + attr.Value + "\"")
 				}
 			}
-		}
-	}
-
-	if e.SelfClosing && len(e.Children) == 0 {
-		if len(e.Attributes) > 1 {
 			builder.WriteString("\n")
 			for i := 0; i < indent; i++ {
 				builder.WriteString("\t")
 			}
 		}
+	}
+
+	// Handle self-closing tags
+	if e.SelfClosing {
 		builder.WriteString("/>")
 		return builder.String()
 	}
 
-	// Close opening tag
-	if len(e.Attributes) > 1 {
-		builder.WriteString("\n")
-		for i := 0; i < indent; i++ {
-			builder.WriteString("\t")
-		}
-	}
 	builder.WriteString(">")
 
-	// Special case: if there's only one child and it's a text node or comment, don't add newlines
-	if len(e.Children) == 1 {
-		if _, ok := e.Children[0].(*RawNode); ok {
-			builder.WriteString(e.Children[0].Dump())
-			builder.WriteString("</" + e.Tag + ">")
-			return builder.String()
-		}
-		if _, ok := e.Children[0].(*CommentNode); ok {
-			builder.WriteString(e.Children[0].Dump())
-			builder.WriteString("</" + e.Tag + ">")
-			return builder.String()
-		}
-	}
-
-	// Special case: if all children are comments or text nodes, keep them on same line
-	allSimpleNodes := true
-	for _, child := range e.Children {
-		if _, ok := child.(*RawNode); !ok {
-			if _, ok := child.(*CommentNode); !ok {
-				allSimpleNodes = false
-				break
+	// Handle children
+	if len(e.Children) > 0 {
+		// Special case: if all children are text/comments, keep them on same line
+		allSimpleNodes := true
+		for _, child := range e.Children {
+			if _, ok := child.(*RawNode); !ok {
+				if _, ok := child.(*CommentNode); !ok {
+					allSimpleNodes = false
+					break
+				}
 			}
 		}
-	}
 
-	if allSimpleNodes && len(e.Children) > 0 {
-		for _, child := range e.Children {
-			builder.WriteString(child.Dump())
-		}
-		builder.WriteString("</" + e.Tag + ">")
-		return builder.String()
-	}
+		if allSimpleNodes {
+			containsNewLines := false
+			var lastRawText string
 
-	// Add children with increased indentation
-	if len(e.Children) > 0 {
-		builder.WriteString("\n")
-		for i, child := range e.Children {
-			if elementChild, ok := child.(*ElementNode); ok {
-				builder.WriteString(elementChild.dump(indent + 1))
-			} else {
-				// For text nodes and comments, indent and write directly
-				for i := 0; i < indent+1; i++ {
+			// Check if any raw node contains newlines and get the last raw text
+			for _, child := range e.Children {
+				if raw, ok := child.(*RawNode); ok {
+					if strings.Contains(raw.Text, "\n") {
+						containsNewLines = true
+					}
+					lastRawText = raw.Text
+				}
+			}
+
+			if containsNewLines {
+				// Handle case where raw text contains newlines (like template content)
+				for _, child := range e.Children {
+					builder.WriteString(child.Dump())
+				}
+
+				// Only add newline if the last raw text doesn't already end with one
+				if !strings.HasSuffix(lastRawText, "\n") {
+					builder.WriteString("\n")
+				}
+
+				for i := 0; i < indent; i++ {
 					builder.WriteString("\t")
 				}
-				builder.WriteString(child.Dump())
+			} else {
+				// Regular simple nodes on the same line
+				for _, child := range e.Children {
+					builder.WriteString(child.Dump())
+				}
 			}
-			if i < len(e.Children)-1 {
+		} else {
+			// Filter out empty nodes and normalize newlines
+			var nonEmptyChildren NodeList
+			for _, child := range e.Children {
+				if raw, ok := child.(*RawNode); ok {
+					if strings.TrimSpace(raw.Text) != "" {
+						nonEmptyChildren = append(nonEmptyChildren, raw)
+					}
+				} else {
+					nonEmptyChildren = append(nonEmptyChildren, child)
+				}
+			}
+
+			for _, child := range nonEmptyChildren {
 				builder.WriteString("\n")
+				if elementChild, ok := child.(*ElementNode); ok {
+					builder.WriteString(elementChild.dump(indent + 1))
+				} else {
+					for j := 0; j < indent+1; j++ {
+						builder.WriteString("\t")
+					}
+					builder.WriteString(strings.TrimSpace(child.Dump()))
+				}
 			}
-		}
-		builder.WriteString("\n")
-		for i := 0; i < indent; i++ {
-			builder.WriteString("\t")
+			builder.WriteString("\n")
+			for i := 0; i < indent; i++ {
+				builder.WriteString("\t")
+			}
 		}
 	}
+
 	builder.WriteString("</" + e.Tag + ">")
 	return builder.String()
 }
@@ -191,17 +230,34 @@ type TwigBlockNode struct {
 func (t *TwigBlockNode) Dump() string {
 	var builder strings.Builder
 	builder.WriteString("{% block " + t.Name + " %}")
-	if len(t.Children) > 0 {
+
+	// Filter out empty nodes and normalize newlines
+	var nonEmptyChildren NodeList
+	for _, child := range t.Children {
+		if raw, ok := child.(*RawNode); ok {
+			if strings.TrimSpace(raw.Text) != "" {
+				nonEmptyChildren = append(nonEmptyChildren, raw)
+			}
+		} else {
+			nonEmptyChildren = append(nonEmptyChildren, child)
+		}
+	}
+
+	if len(nonEmptyChildren) > 0 {
 		builder.WriteString("\n")
-		for _, child := range t.Children {
+		for i, child := range nonEmptyChildren {
 			if elementChild, ok := child.(*ElementNode); ok {
 				builder.WriteString(elementChild.dump(1))
 			} else {
 				builder.WriteString("\t")
-				builder.WriteString(child.Dump())
+				builder.WriteString(strings.TrimSpace(child.Dump()))
 			}
-			builder.WriteString("\n")
+			if i < len(nonEmptyChildren)-1 {
+				// Add an extra newline between elements
+				builder.WriteString("\n\n")
+			}
 		}
+		builder.WriteString("\n")
 	}
 	builder.WriteString("{% endblock %}")
 	return builder.String()
@@ -683,7 +739,7 @@ func (p *Parser) parseTwigBlock() (Node, error) {
 	}
 	p.pos += 2 // skip "{%"
 	p.skipWhitespace()
-	
+
 	if !strings.HasPrefix(p.input[p.pos:], "endblock") {
 		return nil, fmt.Errorf("missing endblock at pos %d", p.pos)
 	}
