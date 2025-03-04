@@ -1,8 +1,6 @@
 module github.com/shopware/extension-verifier
 
-go 1.23.6
-
-toolchain go1.24.0
+go 1.24.0
 
 require (
 	github.com/shopware/shopware-cli v0.0.0-20250218094955-5a955d0013f8
