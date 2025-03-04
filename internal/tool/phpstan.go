@@ -1,6 +1,7 @@
 package tool
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
@@ -72,6 +73,9 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 	phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json")
 	phpstan.Dir = config.Extension.GetPath()
 
+	var stderr bytes.Buffer
+	phpstan.Stderr = &stderr
+
 	log, _ := phpstan.Output()
 
 	log = []byte(strings.ReplaceAll(string(log), "\"files\":[]", "\"files\":{}"))
@@ -79,6 +83,7 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 	var phpstanResult PhpStanOutput
 
 	if err := json.Unmarshal(log, &phpstanResult); err != nil {
+		fmt.Println(stderr.String())
 		return fmt.Errorf("failed to unmarshal phpstan output: %w", err)
 	}
 
