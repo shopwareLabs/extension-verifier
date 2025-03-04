@@ -13,9 +13,9 @@ func TestUrlFieldFixer(t *testing.T) {
 		after       string
 	}{
 		{
-			description: "replace value with modelValue",
+			description: "replace value with model-value",
 			before:      `<sw-url-field value="Hello World"/>`,
-			after:       `<mt-url-field modelValue="Hello World"/>`,
+			after:       `<mt-url-field model-value="Hello World"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
@@ -25,7 +25,7 @@ func TestUrlFieldFixer(t *testing.T) {
 		{
 			description: "replace update:value event",
 			before:      `<sw-url-field @update:value="updateValue"/>`,
-			after:       `<mt-url-field @update:modelValue="updateValue"/>`,
+			after:       `<mt-url-field @update:model-value="updateValue"/>`,
 		},
 		{
 			description: "process label slot",

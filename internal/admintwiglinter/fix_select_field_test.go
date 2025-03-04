@@ -13,9 +13,9 @@ func TestSelectFieldFixer(t *testing.T) {
 		after       string
 	}{
 		{
-			description: "replace value with modelValue",
+			description: "replace value with model-value",
 			before:      `<sw-select-field :value="selectedValue"/>`,
-			after:       `<mt-select :modelValue="selectedValue"/>`,
+			after:       `<mt-select :model-value="selectedValue"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
@@ -41,9 +41,9 @@ func TestSelectFieldFixer(t *testing.T) {
 			after:       `<mt-select label="My Label"></mt-select>`,
 		},
 		{
-			description: "replace update:value event with update:modelValue",
+			description: "replace update:value event with update:model-value",
 			before:      `<sw-select-field @update:value="onUpdateValue"/>`,
-			after:       `<mt-select @update:modelValue="onUpdateValue"/>`,
+			after:       `<mt-select @update:model-value="onUpdateValue"/>`,
 		},
 	}
 

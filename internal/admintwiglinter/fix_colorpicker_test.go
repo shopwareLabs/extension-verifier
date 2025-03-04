@@ -18,9 +18,9 @@ func TestColorpickerFixer(t *testing.T) {
 			after:       `<mt-colorpicker/>`,
 		},
 		{
-			description: "replace value with modelValue",
+			description: "replace value with model-value",
 			before:      `<sw-colorpicker :value="myValue"/>`,
-			after:       `<mt-colorpicker :modelValue="myValue"/>`,
+			after:       `<mt-colorpicker :model-value="myValue"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
@@ -30,7 +30,7 @@ func TestColorpickerFixer(t *testing.T) {
 		{
 			description: "replace update:value event",
 			before:      `<sw-colorpicker @update:value="onUpdateValue"/>`,
-			after:       `<mt-colorpicker @update:modelValue="onUpdateValue"/>`,
+			after:       `<mt-colorpicker @update:model-value="onUpdateValue"/>`,
 		},
 		{
 			description: "process label slot",

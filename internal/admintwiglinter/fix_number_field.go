@@ -41,12 +41,12 @@ func (n NumberFieldFixer) Fix(nodes []html.Node) error {
 				switch attr.Key {
 				case ":value":
 					newAttrs = append(newAttrs, html.Attribute{
-						Key:   ":modelValue",
+						Key:   ":model-value",
 						Value: attr.Value,
 					})
 				case "v-model:value":
 					newAttrs = append(newAttrs, html.Attribute{
-						Key:   ":modelValue",
+						Key:   ":model-value",
 						Value: attr.Value,
 					})
 					newAttrs = append(newAttrs, html.Attribute{

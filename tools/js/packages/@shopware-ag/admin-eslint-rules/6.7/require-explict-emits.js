@@ -175,7 +175,7 @@ export default {
             const componentNodeStart = componentNode.range[0]; // accessing to componentNodeStart.start causes an error in tests
             return fixer.insertTextAfterRange(
                 [componentNodeStart + 1, componentNodeStart + 1],
-                `\nemits: [${stringEmitEvents}],\n`);
+                `\n  emits: [${stringEmitEvents}],\n`);
         }
     
         return {
