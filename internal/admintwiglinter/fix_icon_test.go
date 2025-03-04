@@ -16,24 +16,24 @@ func TestIconFixer(t *testing.T) {
 			description: "basic component replacement with default size",
 			before:      `<sw-icon name="regular-times-s"/>`,
 			after: `<mt-icon
-	name="regular-times-s"
-	size="24px"
+    name="regular-times-s"
+    size="24px"
 />`,
 		},
 		{
 			description: "replace small with size 16px",
 			before:      `<sw-icon name="regular-times-s" small/>`,
 			after: `<mt-icon
-	name="regular-times-s"
-	size="16px"
+    name="regular-times-s"
+    size="16px"
 />`,
 		},
 		{
 			description: "replace large with size 32px",
 			before:      `<sw-icon name="regular-times-s" large/>`,
 			after: `<mt-icon
-	name="regular-times-s"
-	size="32px"
+    name="regular-times-s"
+    size="32px"
 />`,
 		},
 	}

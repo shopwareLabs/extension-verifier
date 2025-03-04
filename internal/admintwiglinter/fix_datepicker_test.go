@@ -16,9 +16,9 @@ func TestDatepickerFixer(t *testing.T) {
 			description: "basic component replacement",
 			before:      `<sw-datepicker :model-value="myValue" v-model="myValue" @update:model-value="handler"/>`,
 			after: `<mt-datepicker
-	:model-value="myValue"
-	v-model="myValue"
-	@update:model-value="handler"
+    :model-value="myValue"
+    v-model="myValue"
+    @update:model-value="handler"
 />`,
 		},
 		{

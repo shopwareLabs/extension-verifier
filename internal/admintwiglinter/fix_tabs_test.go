@@ -18,7 +18,9 @@ func TestTabsFixer(t *testing.T) {
         <sw-tabs-item name="tab1">Tab 1</sw-tabs-item>
         <sw-tabs-item name="tab2">Tab 2</sw-tabs-item>
     </template></sw-tabs>`,
-			after: `<mt-tabs :items="[{'label':'Tab 1','name':'tab1'},{'label':'Tab 2','name':'tab2'}]"></mt-tabs>`,
+			after: `<mt-tabs
+    :items="[{'label':'Tab 1','name':'tab1'},{'label':'Tab 2','name':'tab2'}]"
+></mt-tabs>`,
 		},
 		{
 			description: "remove content slot and add event",
