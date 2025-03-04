@@ -41,7 +41,7 @@ func (t TextFieldFixer) Fix(nodes []html.Node) error {
 			for _, attr := range node.Attributes {
 				switch attr.Key {
 				case "value":
-					attr.Key = "modelValue"
+					attr.Key = "model-value"
 					newAttrs = append(newAttrs, attr)
 				case "v-model:value":
 					attr.Key = "v-model"
@@ -54,7 +54,7 @@ func (t TextFieldFixer) Fix(nodes []html.Node) error {
 				case "isInvalid", "aiBadge", "@base-field-mounted":
 					// remove these attributes
 				case "@update:value":
-					attr.Key = "@update:modelValue"
+					attr.Key = "@update:model-value"
 					newAttrs = append(newAttrs, attr)
 				default:
 					newAttrs = append(newAttrs, attr)

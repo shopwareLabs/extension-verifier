@@ -38,11 +38,11 @@ func (t TextareaFieldFixer) Fix(nodes []html.Node) error {
 			for i, attr := range node.Attributes {
 				switch attr.Key {
 				case "value":
-					node.Attributes[i].Key = "modelValue"
+					node.Attributes[i].Key = "model-value"
 				case "v-model:value":
 					node.Attributes[i].Key = "v-model"
 				case "update:value":
-					node.Attributes[i].Key = "update:modelValue"
+					node.Attributes[i].Key = "update:model-value"
 				}
 			}
 

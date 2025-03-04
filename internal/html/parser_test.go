@@ -24,10 +24,10 @@ func TestFormattingOfHTML(t *testing.T) {
 	node := &ElementNode{Tag: "template", Attributes: make([]Attribute, 0), Children: NodeList{swBlock}}
 
 	assert.Equal(t, `<template>
-	<sw-button
-		label="Click me"
-		variant="primary"
-	></sw-button>
+    <sw-button
+        label="Click me"
+        variant="primary"
+    ></sw-button>
 </template>`, node.Dump())
 
 	simpleButton := &ElementNode{
@@ -55,9 +55,9 @@ func TestParseAndPrint(t *testing.T) {
 			description: "sub-nodes",
 			before:      `<template><div><sw-button>Foo</sw-button></div></template>`,
 			after: `<template>
-	<div>
-		<sw-button>Foo</sw-button>
-	</div>
+    <div>
+        <sw-button>Foo</sw-button>
+    </div>
 </template>`,
 		},
 		{
@@ -69,8 +69,8 @@ func TestParseAndPrint(t *testing.T) {
 			description: "attributes",
 			before:      `<sw-button variant="primary" foo="bla">Click me</sw-button>`,
 			after: `<sw-button
-	variant="primary"
-	foo="bla"
+    variant="primary"
+    foo="bla"
 >Click me</sw-button>`,
 		},
 		{
@@ -95,40 +95,31 @@ func TestParseAndPrint(t *testing.T) {
 		},
 		{
 			description: "elements with block",
-			before:      "{% block foo %}<sw-button>Click me</sw-button>{% endblock %}",
+			before:      `{% block foo %}<sw-button>Click me</sw-button>{% endblock %}`,
 			after: `{% block foo %}
-	<sw-button>Click me</sw-button>
+    <sw-button>Click me</sw-button>
 {% endblock %}`,
 		},
 		{
 			description: "multi line breaks get removed",
-			before: `{% block test %}
+			before: `{% block test %}<sw-button>Click me</sw-button>
 
 
-<sw-button>Click me</sw-button>
-
-{% endblock %}`,
+<sw-button>Click me</sw-button>{% endblock %}`,
 			after: `{% block test %}
-	<sw-button>Click me</sw-button>
+    <sw-button>Click me</sw-button>
+
+    <sw-button>Click me</sw-button>
 {% endblock %}`,
 		},
-
 		{
 			description: "multi line between elements only one",
-			before: `{% block test %}
-
-
-<sw-button>Click me</sw-button>
-
-
-<sw-button>Click me</sw-button>
-
-{% endblock %}`,
-			after: `{% block test %}
-	<sw-button>Click me</sw-button>
-
-	<sw-button>Click me</sw-button>
-{% endblock %}`,
+			before:      `<template><foo><bar/></foo></template>`,
+			after: `<template>
+    <foo>
+        <bar/>
+    </foo>
+</template>`,
 		},
 		{
 			description: "multi line between only elements",
@@ -142,65 +133,50 @@ func TestParseAndPrint(t *testing.T) {
 
 </template>`,
 			after: `<template>
-	<foo>
-		<bar/>
-	</foo>
+    <foo>
+        <bar/>
+    </foo>
 </template>`,
 		},
 		{
 			description: "long attribute is on new line",
 			before:      `<sw-button link="{ name: 'sw.product.detail.pseudovariants', params: { productId: product.id } }"/>`,
 			after: `<sw-button
-	link="{ name: 'sw.product.detail.pseudovariants', params: { productId: product.id } }"
+    link="{ name: 'sw.product.detail.pseudovariants', params: { productId: product.id } }"
 />`,
 		},
 		{
 			description: "html element with content gets correct formatting",
-			before: `<template>
-<router-link>
-{{ item.mainPseudovariant.product.translated.name }}
-</router-link>
-</template>`,
+			before:      `<template><router-link>{{ item.mainPseudovariant.product.translated.name }}</router-link></template>`,
 			after: `<template>
-	<router-link>
+    <router-link>
 {{ item.mainPseudovariant.product.translated.name }}
-	</router-link>
+
+    </router-link>
 </template>`,
 		},
 		{
 			description: "multiple template elements should have a newline between them",
-			before: `<template>
-	<div>Template 1</div>
-</template>
-<template>
-	<div>Template 2</div>
-</template>`,
+			before:      `<template><div>Template 1</div></template><template><div>Template 2</div></template>`,
 			after: `<template>
-	<div>Template 1</div>
+    <div>Template 1</div>
 </template>
 
 <template>
-	<div>Template 2</div>
+    <div>Template 2</div>
 </template>`,
 		},
 		{
 			description: "multiple template elements should have a newline between them with root element",
-			before: `<sw-page>
-<template>
-	<div>Template 1</div>
-</template>
-<template>
-	<div>Template 2</div>
-</template>
-</sw-page>`,
+			before:      `<sw-page><template><div>Template 1</div></template><template><div>Template 2</div></template></sw-page>`,
 			after: `<sw-page>
-	<template>
-		<div>Template 1</div>
-	</template>
+    <template>
+        <div>Template 1</div>
+    </template>
 
-	<template>
-		<div>Template 2</div>
-	</template>
+    <template>
+        <div>Template 2</div>
+    </template>
 </sw-page>`,
 		},
 		{

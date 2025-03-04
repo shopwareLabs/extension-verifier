@@ -18,9 +18,9 @@ func TestPasswordFieldFixer(t *testing.T) {
 			after:       `<mt-password-field></mt-password-field>`,
 		},
 		{
-			description: "replace value with modelValue",
+			description: "replace value with model-value",
 			before:      `<sw-password-field value="Hello World"/>`,
-			after:       `<mt-password-field modelValue="Hello World"/>`,
+			after:       `<mt-password-field model-value="Hello World"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
@@ -40,7 +40,7 @@ func TestPasswordFieldFixer(t *testing.T) {
 		{
 			description: "replace update:value event",
 			before:      `<sw-password-field @update:value="updateValue"/>`,
-			after:       `<mt-password-field @update:modelValue="updateValue"/>`,
+			after:       `<mt-password-field @update:model-value="updateValue"/>`,
 		},
 		{
 			description: "remove base-field-mounted event",

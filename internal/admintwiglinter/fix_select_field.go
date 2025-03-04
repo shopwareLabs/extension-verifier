@@ -47,7 +47,7 @@ func (s SelectFieldFixer) Fix(nodes []html.Node) error {
 			for _, attr := range node.Attributes {
 				switch attr.Key {
 				case ":value":
-					newAttrs = append(newAttrs, html.Attribute{Key: ":modelValue", Value: attr.Value})
+					newAttrs = append(newAttrs, html.Attribute{Key: ":model-value", Value: attr.Value})
 				case "v-model:value":
 					newAttrs = append(newAttrs, html.Attribute{Key: "v-model", Value: attr.Value})
 				case ":aside":
@@ -59,7 +59,7 @@ func (s SelectFieldFixer) Fix(nodes []html.Node) error {
 					newAttrs = append(newAttrs, html.Attribute{Key: ":options", Value: converted})
 					optionsSet = true
 				case "@update:value":
-					newAttrs = append(newAttrs, html.Attribute{Key: "@update:modelValue", Value: attr.Value})
+					newAttrs = append(newAttrs, html.Attribute{Key: "@update:model-value", Value: attr.Value})
 				default:
 					newAttrs = append(newAttrs, attr)
 				}

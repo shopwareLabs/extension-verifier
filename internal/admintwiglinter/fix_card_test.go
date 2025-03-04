@@ -26,10 +26,10 @@ func TestCardFixer(t *testing.T) {
 			description: "convert aiBadge property to title slot",
 			before:      `<sw-card aiBadge>Hello World</sw-card>`,
 			after: `<mt-card>
-	<slot name="title">
-		<sw-ai-copilot-badge></sw-ai-copilot-badge>
-	</slot>
-	Hello World
+    <slot name="title">
+        <sw-ai-copilot-badge></sw-ai-copilot-badge>
+    </slot>
+    Hello World
 </mt-card>`,
 		},
 	}

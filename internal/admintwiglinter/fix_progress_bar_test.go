@@ -13,9 +13,9 @@ func TestProgressBarFixer(t *testing.T) {
 		after       string
 	}{
 		{
-			description: "replace value with modelValue",
+			description: "replace value with model-value",
 			before:      `<sw-progress-bar value="5"/>`,
-			after:       `<mt-progress-bar modelValue="5"/>`,
+			after:       `<mt-progress-bar model-value="5"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
@@ -25,7 +25,7 @@ func TestProgressBarFixer(t *testing.T) {
 		{
 			description: "replace update:value event",
 			before:      `<sw-progress-bar @update:value="updateValue"/>`,
-			after:       `<mt-progress-bar @update:modelValue="updateValue"/>`,
+			after:       `<mt-progress-bar @update:model-value="updateValue"/>`,
 		},
 	}
 

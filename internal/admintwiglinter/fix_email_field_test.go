@@ -18,9 +18,9 @@ func TestEmailFieldFixer(t *testing.T) {
 			after:       `<mt-email-field></mt-email-field>`,
 		},
 		{
-			description: "replace value with modelValue",
+			description: "replace value with model-value",
 			before:      `<sw-email-field value="Hello World"/>`,
-			after:       `<mt-email-field modelValue="Hello World"/>`,
+			after:       `<mt-email-field model-value="Hello World"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
@@ -45,7 +45,7 @@ func TestEmailFieldFixer(t *testing.T) {
 		{
 			description: "replace update:value event",
 			before:      `<sw-email-field @update:value="updateValue"/>`,
-			after:       `<mt-email-field @update:modelValue="updateValue"/>`,
+			after:       `<mt-email-field @update:model-value="updateValue"/>`,
 		},
 		{
 			description: "remove base-field-mounted event",

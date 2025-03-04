@@ -19,6 +19,36 @@ type Node interface {
 
 type NodeList []Node
 
+// IndentConfig holds configuration for indentation in HTML output
+type IndentConfig struct {
+	SpaceIndent bool
+	IndentSize  int
+}
+
+// DefaultIndentConfig creates a default indentation config with spaces
+func DefaultIndentConfig() IndentConfig {
+	return IndentConfig{
+		SpaceIndent: true,
+		IndentSize:  4,
+	}
+}
+
+// GetIndent returns the indentation string based on configuration
+func (c IndentConfig) GetIndent() string {
+	if c.SpaceIndent {
+		return strings.Repeat(" ", c.IndentSize)
+	}
+	return "\t"
+}
+
+// The global indentation config that will be used by all nodes
+var indentConfig = DefaultIndentConfig()
+
+// SetIndentConfig updates the global indentation configuration
+func SetIndentConfig(config IndentConfig) {
+	indentConfig = config
+}
+
 func (nodeList NodeList) Dump() string {
 	var builder strings.Builder
 	for i, node := range nodeList {
@@ -31,28 +61,17 @@ func (nodeList NodeList) Dump() string {
 			// Add newline between non-comment nodes if not first
 			if _, ok := nodeList[i-1].(*CommentNode); !ok {
 				builder.WriteString("\n")
+
+				// Add extra newline between template elements
+				if isTemplateElement(node) && i > 0 && isTemplateElement(nodeList[i-1]) {
+					builder.WriteString("\n")
+				}
 			}
 		}
 		builder.WriteString(node.Dump())
 	}
 
-	// Handle the special case where we have adjacent template elements
-	result := builder.String()
-
-	// First, normalize to ensure no more than two consecutive newlines anywhere
-	for strings.Contains(result, "\n\n\n") {
-		result = strings.ReplaceAll(result, "\n\n\n", "\n\n")
-	}
-
-	// Then ensure exactly one empty line between template elements
-	result = strings.ReplaceAll(result, "</template>\n<template>", "</template>\n\n<template>")
-
-	// Also handle indented template elements (nested in other elements)
-	result = strings.ReplaceAll(result, "</template>\n\t<template>", "</template>\n\n\t<template>")
-	result = strings.ReplaceAll(result, "</template>\n\t\t<template>", "</template>\n\n\t\t<template>")
-	result = strings.ReplaceAll(result, "</template>\n\t\t\t<template>", "</template>\n\n\t\t\t<template>")
-
-	return result
+	return builder.String()
 }
 
 // Helper function to check if a node is a template element
@@ -113,10 +132,11 @@ func (e *ElementNode) Dump() string {
 // dump formats the element with the given indentation level
 func (e *ElementNode) dump(indent int) string {
 	var builder strings.Builder
+	indentStr := indentConfig.GetIndent()
 
 	// Add initial indentation
 	for i := 0; i < indent; i++ {
-		builder.WriteString("\t")
+		builder.WriteString(indentStr)
 	}
 
 	builder.WriteString("<" + e.Tag)
@@ -135,12 +155,12 @@ func (e *ElementNode) dump(indent int) string {
 			if len(attributeStr) > 60 {
 				builder.WriteString("\n")
 				for j := 0; j < indent+1; j++ {
-					builder.WriteString("\t")
+					builder.WriteString(indentStr)
 				}
 				builder.WriteString(attributeStr)
 				builder.WriteString("\n")
 				for i := 0; i < indent; i++ {
-					builder.WriteString("\t")
+					builder.WriteString(indentStr)
 				}
 			} else {
 				builder.WriteString(" ")
@@ -150,7 +170,7 @@ func (e *ElementNode) dump(indent int) string {
 			for _, attr := range e.Attributes {
 				builder.WriteString("\n")
 				for j := 0; j < indent+1; j++ {
-					builder.WriteString("\t")
+					builder.WriteString(indentStr)
 				}
 				if attr.Value == "" {
 					builder.WriteString(attr.Key)
@@ -160,7 +180,7 @@ func (e *ElementNode) dump(indent int) string {
 			}
 			builder.WriteString("\n")
 			for i := 0; i < indent; i++ {
-				builder.WriteString("\t")
+				builder.WriteString(indentStr)
 			}
 		}
 	}
@@ -192,6 +212,15 @@ func (e *ElementNode) dump(indent int) string {
 			containsNewLines := false
 			var lastRawText string
 
+			// Process template expressions differently
+			hasTemplateExpression := false
+			for _, child := range e.Children {
+				if _, ok := child.(*TemplateExpressionNode); ok {
+					hasTemplateExpression = true
+					break
+				}
+			}
+
 			// Check if any raw node contains newlines and get the last raw text
 			for _, child := range e.Children {
 				if raw, ok := child.(*RawNode); ok {
@@ -202,10 +231,21 @@ func (e *ElementNode) dump(indent int) string {
 				}
 			}
 
-			if containsNewLines {
-				// Handle case where raw text contains newlines (like template content)
+			// Special case for paragraph tags - keep template expressions inline
+			if e.Tag == "p" {
+				// Regular simple nodes on the same line for paragraph tags
 				for _, child := range e.Children {
 					builder.WriteString(child.Dump())
+				}
+			} else if containsNewLines || hasTemplateExpression {
+				// Handle case where raw text contains newlines (like template content)
+				builder.WriteString("\n")
+				for _, child := range e.Children {
+					if _, ok := child.(*TemplateExpressionNode); ok {
+						builder.WriteString(child.Dump() + "\n")
+					} else {
+						builder.WriteString(child.Dump())
+					}
 				}
 
 				// Only add newline if the last raw text doesn't already end with one
@@ -214,7 +254,7 @@ func (e *ElementNode) dump(indent int) string {
 				}
 
 				for i := 0; i < indent; i++ {
-					builder.WriteString("\t")
+					builder.WriteString(indentStr)
 				}
 			} else {
 				// Regular simple nodes on the same line
@@ -248,14 +288,14 @@ func (e *ElementNode) dump(indent int) string {
 					builder.WriteString(elementChild.dump(indent + 1))
 				} else {
 					for j := 0; j < indent+1; j++ {
-						builder.WriteString("\t")
+						builder.WriteString(indentStr)
 					}
 					builder.WriteString(strings.TrimSpace(child.Dump()))
 				}
 			}
 			builder.WriteString("\n")
 			for i := 0; i < indent; i++ {
-				builder.WriteString("\t")
+				builder.WriteString(indentStr)
 			}
 		}
 	}
@@ -274,6 +314,7 @@ type TwigBlockNode struct {
 // Dump returns the twig block with proper formatting
 func (t *TwigBlockNode) Dump() string {
 	var builder strings.Builder
+	indentStr := indentConfig.GetIndent()
 	builder.WriteString("{% block " + t.Name + " %}")
 
 	// Filter out empty nodes and normalize newlines
@@ -294,7 +335,7 @@ func (t *TwigBlockNode) Dump() string {
 			if elementChild, ok := child.(*ElementNode); ok {
 				builder.WriteString(elementChild.dump(1))
 			} else {
-				builder.WriteString("\t")
+				builder.WriteString(indentStr)
 				builder.WriteString(strings.TrimSpace(child.Dump()))
 			}
 			if i < len(nonEmptyChildren)-1 {
@@ -304,6 +345,7 @@ func (t *TwigBlockNode) Dump() string {
 		}
 		builder.WriteString("\n")
 	}
+
 	builder.WriteString("{% endblock %}")
 	return builder.String()
 }

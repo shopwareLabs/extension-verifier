@@ -18,9 +18,9 @@ func TestTextFieldFixer(t *testing.T) {
 			after:       `<mt-text-field></mt-text-field>`,
 		},
 		{
-			description: "replace value with modelValue",
+			description: "replace value with model-value",
 			before:      `<sw-text-field value="Hello World"/>`,
-			after:       `<mt-text-field modelValue="Hello World"/>`,
+			after:       `<mt-text-field model-value="Hello World"/>`,
 		},
 		{
 			description: "replace v-model:value with v-model",
@@ -45,7 +45,7 @@ func TestTextFieldFixer(t *testing.T) {
 		{
 			description: "replace update:value event",
 			before:      `<sw-text-field @update:value="updateValue"/>`,
-			after:       `<mt-text-field @update:modelValue="updateValue"/>`,
+			after:       `<mt-text-field @update:model-value="updateValue"/>`,
 		},
 		{
 			description: "remove base-field-mounted event",
