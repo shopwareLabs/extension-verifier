@@ -11,44 +11,50 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var fixCommand = &cobra.Command{
-	Use:   "fix [path]",
-	Args:  cobra.ExactArgs(1),
-	Short: "Fixes known issues in a Shopware extension",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ext, err := extension.GetExtensionByFolder(args[0])
+var (
+	allowNonGit bool
+	fixCommand  = &cobra.Command{
+		Use:   "fix [path]",
+		Args:  cobra.ExactArgs(1),
+		Short: "Fixes known issues in a Shopware extension",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			gitPath := filepath.Join(args[0], ".git")
+			if !allowNonGit {
+				if stat, err := os.Stat(gitPath); err != nil || !stat.IsDir() {
+					return fmt.Errorf("provided folder is not a git repository. Use --allow-non-git flag to run anyway")
+				}
+			}
 
-		if err != nil {
-			return err
-		}
+			ext, err := extension.GetExtensionByFolder(args[0])
 
-		gitPath := filepath.Join(args[0], ".git")
-		if stat, err := os.Stat(gitPath); err != nil || !stat.IsDir() {
-			return fmt.Errorf("provided folder is not a git repository")
-		}
+			if err != nil {
+				return err
+			}
 
-		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
+			toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		var gr errgroup.Group
+			var gr errgroup.Group
 
-		for _, tool := range tool.GetTools() {
-			gr.Go(func() error {
-				return tool.Fix(cmd.Context(), *toolCfg)
-			})
-		}
+			for _, tool := range tool.GetTools() {
+				gr.Go(func() error {
+					return tool.Fix(cmd.Context(), *toolCfg)
+				})
+			}
 
-		if err := gr.Wait(); err != nil {
-			return err
-		}
+			if err := gr.Wait(); err != nil {
+				return err
+			}
 
-		return nil
-	},
-}
+			return nil
+		},
+	}
+)
 
 func init() {
+	fixCommand.Flags().BoolVar(&allowNonGit, "allow-non-git", false, "Allow running the fix command on non-git repositories")
 	rootCmd.AddCommand(fixCommand)
 }
