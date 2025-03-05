@@ -45,6 +45,17 @@ jobs:
               run: docker run --rm -e GITHUB_STEP_SUMMARY -e GITHUB_ACTIONS -v $GITHUB_STEP_SUMMARY:$GITHUB_STEP_SUMMARY -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest check /ext --check-against ${{ matrix.version-selection }}
 ```
 
+# Contribution
+
+To run this tool locally you need PHP, Node, NPM and Go.
+
+```shell
+composer install -d tools/php
+npm install --prefix tools/js
+
+go run . <the command you wanna run>
+```
+
 # FAQ
 
 ## Missing classes in Storefront/Elasticsearch bundle
