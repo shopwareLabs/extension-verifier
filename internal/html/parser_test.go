@@ -150,8 +150,7 @@ func TestParseAndPrint(t *testing.T) {
 			before:      `<template><router-link>{{ item.mainPseudovariant.product.translated.name }}</router-link></template>`,
 			after: `<template>
     <router-link>
-{{ item.mainPseudovariant.product.translated.name }}
-
+        {{ item.mainPseudovariant.product.translated.name }}
     </router-link>
 </template>`,
 		},
@@ -182,7 +181,46 @@ func TestParseAndPrint(t *testing.T) {
 		{
 			description: "starting tag in html node",
 			before:      "<p>{{ $tc('swag-customized-products.detail.tabGeneral.cardExclusion.emptyTitle', (searchTerm.length <= 0) ? 1 : 0) }}</p>",
-			after:       "<p>{{ $tc('swag-customized-products.detail.tabGeneral.cardExclusion.emptyTitle', (searchTerm.length <= 0) ? 1 : 0) }}</p>",
+			after: `<p>
+    {{ $tc('swag-customized-products.detail.tabGeneral.cardExclusion.emptyTitle', (searchTerm.length <= 0) ? 1 : 0) }}
+</p>`,
+		},
+		{
+			description: "template expression in div",
+			before:      "<div>{{ someVariable }}</div>",
+			after:       "<div>{{ someVariable }}</div>",
+		},
+		{
+			description: "multiple template expressions",
+			before:      "<div>{{ firstVar }}{{ secondVar }}</div>",
+			after:       "<div>{{ firstVar }}{{ secondVar }}</div>",
+		},
+		{
+			description: "template expression with text",
+			before:      "<div>Before {{ expression }} After</div>",
+			after:       "<div>Before {{ expression }} After</div>",
+		},
+		{
+			description: "template expression in nested elements",
+			before:      "<div><span>{{ nestedExpression }}</span></div>",
+			after: `<div>
+    <span>{{ nestedExpression }}</span>
+</div>`,
+		},
+		{
+			description: "template expression in router-link with long expression",
+			before:      "<router-link>{{ item.mainPseudovariant.product.translated.name }}</router-link>",
+			after: `<router-link>
+    {{ item.mainPseudovariant.product.translated.name }}
+</router-link>`,
+		},
+		{
+			description: "multiple long template expressions",
+			before:      "<div>{{ item.mainPseudovariant.product.translated.name }}{{ item.mainPseudovariant.product.translated.description }}</div>",
+			after: `<div>
+    {{ item.mainPseudovariant.product.translated.name }}
+    {{ item.mainPseudovariant.product.translated.description }}
+</div>`,
 		},
 	}
 
@@ -205,4 +243,22 @@ func TestChangeElement(t *testing.T) {
 		}
 	})
 	assert.Equal(t, `<mt-select @update:modelValue="onUpdateValue"/>`, node.Dump())
+}
+
+func TestMultipleProcessDoesNotChangeFormatting(t *testing.T) {
+	code := `{% block sw_import_export_tabs_profiles %}
+    {% parent() %}
+
+    <sw-tabs-item :route="{ name: 'iwvs.import.export.index.color' }">
+        {{ $tc('iwvs-import-export.page.colorTab') }}
+    </sw-tabs-item>
+{% endblock %}`
+
+	nodes, err := NewParser(code)
+	assert.NoError(t, err)
+	assert.Equal(t, code, nodes.Dump())
+
+	nodes, err = NewParser(nodes.Dump())
+	assert.NoError(t, err)
+	assert.Equal(t, code, nodes.Dump())
 }
