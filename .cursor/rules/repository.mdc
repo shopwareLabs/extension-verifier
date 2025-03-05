@@ -6,7 +6,6 @@ alwaysApply: false
 The repository name is extension-verifier and it's in the shopwareLabs organization.
 
 The pull request title has to be conventional commit style like feat: text, chore: text
-For the pull request description use [PULL_REQUEST_TEMPLATE.md](mdc:.github/PULL_REQUEST_TEMPLATE.md) as an template base and fill out all fields.
 The branch name should be `feat/<something>`, `fix/<something>` or `chore/<something>`.
 
 The commit messages always use convential commits.
