@@ -71,7 +71,17 @@ func (nodeList NodeList) Dump() string {
 		builder.WriteString(node.Dump())
 	}
 
-	return builder.String()
+	// Remove trailing newlines
+	result := builder.String()
+	if len(nodeList) > 0 {
+		result = strings.TrimRight(result, "\n")
+		// Only add ending newline if the original string had at least one
+		if strings.HasSuffix(builder.String(), "\n") {
+			result += "\n"
+		}
+	}
+
+	return result
 }
 
 // Helper function to check if a node is a template element
