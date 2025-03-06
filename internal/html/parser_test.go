@@ -12,26 +12,26 @@ import (
 func TestFormattingOfHTML(t *testing.T) {
 	swBlock := &ElementNode{
 		Tag: "sw-button",
-		Attributes: []Attribute{
-			{
+		Attributes: NodeList{
+			&Attribute{
 				Key:   "label",
 				Value: "Click me",
 			},
-			{
+			&Attribute{
 				Key:   "variant",
 				Value: "primary",
 			},
 		},
 	}
 
-	node := &ElementNode{Tag: "template", Attributes: make([]Attribute, 0), Children: NodeList{swBlock}}
+	node := &ElementNode{Tag: "template", Attributes: NodeList{}, Children: NodeList{swBlock}}
 
 	assert.Equal(t, `<template>
     <sw-button
         label="Click me"
         variant="primary"
     ></sw-button>
-</template>`, node.Dump())
+</template>`, node.Dump(0))
 
 	simpleButton := &ElementNode{
 		Tag: "sw-button",
@@ -40,7 +40,7 @@ func TestFormattingOfHTML(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, `<sw-button>Click me</sw-button>`, simpleButton.Dump())
+	assert.Equal(t, `<sw-button>Click me</sw-button>`, simpleButton.Dump(0))
 }
 
 func TestFormatting(t *testing.T) {
@@ -76,7 +76,7 @@ func TestFormatting(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			assert.Equal(t, stringParts[1], parsed.Dump())
+			assert.Equal(t, stringParts[1], parsed.Dump(0))
 		})
 	}
 
@@ -87,13 +87,20 @@ func TestChangeElement(t *testing.T) {
 	assert.NoError(t, err)
 	TraverseNode(node, func(n *ElementNode) {
 		n.Tag = "mt-select"
-		for i, attr := range n.Attributes {
-			if attr.Key == "@update:value" {
-				n.Attributes[i].Key = "@update:modelValue"
+		var newAttributes NodeList
+		for _, attr := range n.Attributes {
+			if attribute, ok := attr.(Attribute); ok {
+				if attribute.Key == "@update:value" {
+					attribute.Key = "@update:modelValue"
+				}
+				newAttributes = append(newAttributes, attribute)
+			} else {
+				newAttributes = append(newAttributes, attr)
 			}
 		}
+		n.Attributes = newAttributes
 	})
-	assert.Equal(t, `<mt-select @update:modelValue="onUpdateValue"/>`, node.Dump())
+	assert.Equal(t, `<mt-select @update:modelValue="onUpdateValue"/>`, node.Dump(0))
 }
 
 func TestBlockParsing(t *testing.T) {
@@ -102,7 +109,7 @@ func TestBlockParsing(t *testing.T) {
 	node, err := NewParser(input)
 	assert.NoError(t, err)
 
-	assert.Equal(t, input, node.Dump())
+	assert.Equal(t, input, node.Dump(0))
 
 	block, ok := node[0].(*TwigBlockNode)
 	assert.True(t, ok)
