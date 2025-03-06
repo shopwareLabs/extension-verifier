@@ -29,7 +29,6 @@ func (p PasswordFieldFixer) Check(nodes []html.Node) []CheckError {
 }
 
 func (p PasswordFieldFixer) Supports(v *version.Version) bool {
-	// ...existing code...
 	return shopware67Constraint.Check(v)
 }
 
@@ -39,29 +38,35 @@ func (p PasswordFieldFixer) Fix(nodes []html.Node) error {
 			node.Tag = "mt-password-field"
 
 			// Update or remove attributes
-			var newAttrs []html.Attribute
-			for _, attr := range node.Attributes {
-				switch attr.Key {
-				case "value":
-					attr.Key = "model-value"
-					newAttrs = append(newAttrs, attr)
-				case "v-model:value":
-					attr.Key = "v-model"
-					newAttrs = append(newAttrs, attr)
-				case "size":
-					if attr.Value == "medium" {
-						attr.Value = "default"
+			var newAttrs html.NodeList
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					switch attr.Key {
+					case "value":
+						attr.Key = "model-value"
+						newAttrs = append(newAttrs, attr)
+					case "v-model:value":
+						attr.Key = "v-model"
+						newAttrs = append(newAttrs, attr)
+					case "size":
+						if attr.Value == "medium" {
+							attr.Value = "default"
+						}
+						newAttrs = append(newAttrs, attr)
+					case "isInvalid":
+						// remove attribute
+					case "@update:value":
+						attr.Key = "@update:model-value"
+						newAttrs = append(newAttrs, attr)
+					case "@base-field-mounted":
+						// remove attribute
+					default:
+						newAttrs = append(newAttrs, attr)
 					}
-					newAttrs = append(newAttrs, attr)
-				case "isInvalid":
-					// remove attribute
-				case "@update:value":
-					attr.Key = "@update:model-value"
-					newAttrs = append(newAttrs, attr)
-				case "@base-field-mounted":
-					// remove attribute
-				default:
-					newAttrs = append(newAttrs, attr)
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
 			node.Attributes = newAttrs
@@ -69,27 +74,32 @@ func (p PasswordFieldFixer) Fix(nodes []html.Node) error {
 			// Process slot children for label and hint
 			var label, hint string
 			for _, child := range node.Children {
-				if elem, ok := child.(*html.ElementNode); ok {
-					for _, attr := range elem.Attributes {
-						if attr.Key == "#label" {
-							var content string
-							for _, inner := range elem.Children {
-								content += strings.TrimSpace(inner.Dump())
+				if elem, ok := child.(*html.ElementNode); ok && elem.Tag == "template" {
+					for _, a := range elem.Attributes {
+						if attr, ok := a.(html.Attribute); ok {
+							if attr.Key == "#label" {
+								var sb strings.Builder
+								for _, inner := range elem.Children {
+									sb.WriteString(strings.TrimSpace(inner.Dump(0)))
+								}
+								label = strings.Replace(sb.String(), "Label", "label", 1)
+								goto SkipChild
 							}
-							label = strings.Replace(content, "Label", "label", 1)
-						}
-						if attr.Key == "#hint" {
-							var content string
-							for _, inner := range elem.Children {
-								content += strings.TrimSpace(inner.Dump())
+							if attr.Key == "#hint" {
+								var sb strings.Builder
+								for _, inner := range elem.Children {
+									sb.WriteString(strings.TrimSpace(inner.Dump(0)))
+								}
+								hint = strings.Replace(sb.String(), "Hint", "hint", 1)
+								goto SkipChild
 							}
-							hint = strings.Replace(content, "Hint", "hint", 1)
 						}
 					}
 				}
+			SkipChild:
 			}
 			// Remove original children after processing slots
-			node.Children = []html.Node{}
+			node.Children = nil
 			if label != "" {
 				node.Attributes = append(node.Attributes, html.Attribute{
 					Key:   "label",

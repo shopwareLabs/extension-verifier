@@ -36,18 +36,24 @@ func (c CardFixer) Fix(nodes []html.Node) error {
 	html.TraverseNode(nodes, func(node *html.ElementNode) {
 		if node.Tag == "sw-card" {
 			node.Tag = "mt-card"
-			var newAttrs []html.Attribute
+			var newAttrs html.NodeList
 			aiBadgeFound := false
 			// Process attributes: remove aiBadge and contentPadding.
-			for _, attr := range node.Attributes {
-				switch attr.Key {
-				case "aiBadge", "contentPadding":
-					if attr.Key == "aiBadge" {
-						aiBadgeFound = true
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					switch attr.Key {
+					case "aiBadge", "contentPadding":
+						if attr.Key == "aiBadge" {
+							aiBadgeFound = true
+						}
+						// remove attribute
+					default:
+						newAttrs = append(newAttrs, attr)
 					}
-					// remove attribute
-				default:
-					newAttrs = append(newAttrs, attr)
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
 			node.Attributes = newAttrs
@@ -56,15 +62,15 @@ func (c CardFixer) Fix(nodes []html.Node) error {
 			if aiBadgeFound {
 				aiBadgeSlot := &html.ElementNode{
 					Tag: "slot",
-					Attributes: []html.Attribute{
-						{Key: "name", Value: "title"},
+					Attributes: html.NodeList{
+						html.Attribute{Key: "name", Value: "title"},
 					},
-					Children: []html.Node{
+					Children: html.NodeList{
 						&html.ElementNode{Tag: "sw-ai-copilot-badge"},
 					},
 				}
 				// Prepend the title slot to existing children.
-				node.Children = append([]html.Node{aiBadgeSlot}, node.Children...)
+				node.Children = append(html.NodeList{aiBadgeSlot}, node.Children...)
 			}
 		}
 	})

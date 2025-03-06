@@ -14,7 +14,6 @@ func init() {
 }
 
 func (i IconFixer) Check(nodes []html.Node) []CheckError {
-	// ...existing code...
 	var errors []CheckError
 	html.TraverseNode(nodes, func(node *html.ElementNode) {
 		if node.Tag == "sw-icon" {
@@ -30,7 +29,6 @@ func (i IconFixer) Check(nodes []html.Node) []CheckError {
 }
 
 func (i IconFixer) Supports(v *version.Version) bool {
-	// ...existing code...
 	return shopware67Constraint.Check(v)
 }
 
@@ -39,31 +37,39 @@ func (i IconFixer) Fix(nodes []html.Node) error {
 		if node.Tag == "sw-icon" {
 			node.Tag = "mt-icon"
 			hasSize := false
-			var newAttrs []html.Attribute
-			for _, attr := range node.Attributes {
-				switch strings.ToLower(attr.Key) {
-				case "small":
-					// Replace "small" with size="16px"
-					newAttrs = append(newAttrs, html.Attribute{
-						Key:   "size",
-						Value: "16px",
-					})
-					hasSize = true
-				case "large":
-					// Replace "large" with size="32px"
-					newAttrs = append(newAttrs, html.Attribute{
-						Key:   "size",
-						Value: "32px",
-					})
-					hasSize = true
-				case "size":
-					// keep existing size prop
-					newAttrs = append(newAttrs, attr)
-					hasSize = true
-				default:
-					newAttrs = append(newAttrs, attr)
+			var newAttrs html.NodeList
+
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					switch strings.ToLower(attr.Key) {
+					case "small":
+						// Replace "small" with size="16px"
+						newAttrs = append(newAttrs, html.Attribute{
+							Key:   "size",
+							Value: "16px",
+						})
+						hasSize = true
+					case "large":
+						// Replace "large" with size="32px"
+						newAttrs = append(newAttrs, html.Attribute{
+							Key:   "size",
+							Value: "32px",
+						})
+						hasSize = true
+					case "size":
+						// keep existing size prop
+						newAttrs = append(newAttrs, attr)
+						hasSize = true
+					default:
+						newAttrs = append(newAttrs, attr)
+					}
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
+
 			// If no size related prop is set, add default size="24px"
 			if !hasSize {
 				newAttrs = append(newAttrs, html.Attribute{

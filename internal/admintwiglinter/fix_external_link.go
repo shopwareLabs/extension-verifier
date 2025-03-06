@@ -34,12 +34,18 @@ func (e ExternalLinkFixer) Fix(nodes []html.Node) error {
 	html.TraverseNode(nodes, func(node *html.ElementNode) {
 		if node.Tag == "sw-external-link" {
 			node.Tag = "mt-external-link"
-			var newAttrs []html.Attribute
-			for _, attr := range node.Attributes {
-				if attr.Key == "icon" {
-					continue
+			var newAttrs html.NodeList
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					if attr.Key == "icon" {
+						continue
+					}
+					newAttrs = append(newAttrs, attr)
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
-				newAttrs = append(newAttrs, attr)
 			}
 			node.Attributes = newAttrs
 		}

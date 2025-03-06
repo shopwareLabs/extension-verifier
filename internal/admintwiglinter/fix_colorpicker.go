@@ -37,20 +37,26 @@ func (c ColorpickerFixer) Fix(nodes []html.Node) error {
 		if node.Tag == "sw-colorpicker" {
 			node.Tag = "mt-colorpicker"
 
-			var newAttrs []html.Attribute
-			for _, attr := range node.Attributes {
-				switch attr.Key {
-				case ":value":
-					attr.Key = ":model-value"
-					newAttrs = append(newAttrs, attr)
-				case "v-model:value":
-					attr.Key = "v-model"
-					newAttrs = append(newAttrs, attr)
-				case "@update:value":
-					attr.Key = "@update:model-value"
-					newAttrs = append(newAttrs, attr)
-				default:
-					newAttrs = append(newAttrs, attr)
+			var newAttrs html.NodeList
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					switch attr.Key {
+					case ":value":
+						attr.Key = ":model-value"
+						newAttrs = append(newAttrs, attr)
+					case "v-model:value":
+						attr.Key = "v-model"
+						newAttrs = append(newAttrs, attr)
+					case "@update:value":
+						attr.Key = "@update:model-value"
+						newAttrs = append(newAttrs, attr)
+					default:
+						newAttrs = append(newAttrs, attr)
+					}
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
 			node.Attributes = newAttrs
@@ -60,19 +66,21 @@ func (c ColorpickerFixer) Fix(nodes []html.Node) error {
 			for _, child := range node.Children {
 				if elem, ok := child.(*html.ElementNode); ok {
 					if elem.Tag == "template" {
-						for _, attr := range elem.Attributes {
-							if attr.Key == "#label" {
-								var sb strings.Builder
-								for _, inner := range elem.Children {
-									sb.WriteString(strings.TrimSpace(inner.Dump()))
+						for _, a := range elem.Attributes {
+							if attr, ok := a.(html.Attribute); ok {
+								if attr.Key == "#label" {
+									var sb strings.Builder
+									for _, inner := range elem.Children {
+										sb.WriteString(strings.TrimSpace(inner.Dump(0)))
+									}
+									label = sb.String()
 								}
-								label = sb.String()
 							}
 						}
 					}
 				}
 			}
-			node.Children = []html.Node{}
+			node.Children = html.NodeList{}
 			if label != "" {
 				node.Attributes = append(node.Attributes, html.Attribute{
 					Key:   "label",

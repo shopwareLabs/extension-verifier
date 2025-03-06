@@ -15,7 +15,6 @@ func init() {
 }
 
 func (s SelectFieldFixer) Check(nodes []html.Node) []CheckError {
-	// ...existing code...
 	var errs []CheckError
 	html.TraverseNode(nodes, func(node *html.ElementNode) {
 		if node.Tag == "sw-select-field" {
@@ -31,7 +30,6 @@ func (s SelectFieldFixer) Check(nodes []html.Node) []CheckError {
 }
 
 func (s SelectFieldFixer) Supports(v *version.Version) bool {
-	// ...existing code...
 	return shopware67Constraint.Check(v)
 }
 
@@ -40,28 +38,34 @@ func (s SelectFieldFixer) Fix(nodes []html.Node) error {
 		if node.Tag == "sw-select-field" {
 			node.Tag = "mt-select"
 
-			var newAttrs []html.Attribute
+			var newAttrs html.NodeList
 			// Flag to check if options prop is already set.
 			optionsSet := false
 
-			for _, attr := range node.Attributes {
-				switch attr.Key {
-				case ":value":
-					newAttrs = append(newAttrs, html.Attribute{Key: ":model-value", Value: attr.Value})
-				case "v-model:value":
-					newAttrs = append(newAttrs, html.Attribute{Key: "v-model", Value: attr.Value})
-				case ":aside":
-					// Remove aside prop.
-				case ":options":
-					// Convert options format: replace "name" with "label" and "id" with "value"
-					converted := strings.ReplaceAll(attr.Value, "name", "label")
-					converted = strings.ReplaceAll(converted, "id", "value")
-					newAttrs = append(newAttrs, html.Attribute{Key: ":options", Value: converted})
-					optionsSet = true
-				case "@update:value":
-					newAttrs = append(newAttrs, html.Attribute{Key: "@update:model-value", Value: attr.Value})
-				default:
-					newAttrs = append(newAttrs, attr)
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					switch attr.Key {
+					case ":value":
+						newAttrs = append(newAttrs, html.Attribute{Key: ":model-value", Value: attr.Value})
+					case "v-model:value":
+						newAttrs = append(newAttrs, html.Attribute{Key: "v-model", Value: attr.Value})
+					case ":aside":
+						// Remove aside prop.
+					case ":options":
+						// Convert options format: replace "name" with "label" and "id" with "value"
+						converted := strings.ReplaceAll(attr.Value, "name", "label")
+						converted = strings.ReplaceAll(converted, "id", "value")
+						newAttrs = append(newAttrs, html.Attribute{Key: ":options", Value: converted})
+						optionsSet = true
+					case "@update:value":
+						newAttrs = append(newAttrs, html.Attribute{Key: "@update:model-value", Value: attr.Value})
+					default:
+						newAttrs = append(newAttrs, attr)
+					}
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
 			node.Attributes = newAttrs
@@ -69,20 +73,21 @@ func (s SelectFieldFixer) Fix(nodes []html.Node) error {
 			// Process children for slot conversion.
 			var labelText string
 			var optionObjects []map[string]interface{}
-			var remainingChildren []html.Node
 
 			for _, child := range node.Children {
 				if elem, ok := child.(*html.ElementNode); ok {
 					// Convert label slot to label prop.
 					if elem.Tag == "template" {
 						for _, a := range elem.Attributes {
-							if a.Key == "#label" || a.Key == "v-slot:label" {
-								var sb strings.Builder
-								for _, inner := range elem.Children {
-									sb.WriteString(strings.TrimSpace(inner.Dump()))
+							if attr, ok := a.(html.Attribute); ok {
+								if attr.Key == "#label" || attr.Key == "v-slot:label" {
+									var sb strings.Builder
+									for _, inner := range elem.Children {
+										sb.WriteString(strings.TrimSpace(inner.Dump(0)))
+									}
+									labelText = sb.String()
+									goto SkipChild
 								}
-								labelText = sb.String()
-								goto SkipChild
 							}
 						}
 					}
@@ -91,25 +96,26 @@ func (s SelectFieldFixer) Fix(nodes []html.Node) error {
 						opt := make(map[string]interface{})
 						// Get option value from attributes.
 						for _, a := range elem.Attributes {
-							if a.Key == "value" {
-								opt["value"] = a.Value
+							if attr, ok := a.(html.Attribute); ok {
+								if attr.Key == "value" {
+									opt["value"] = attr.Value
+								}
 							}
 						}
 						// Get option label from inner text.
 						var sb strings.Builder
 						for _, inner := range elem.Children {
-							sb.WriteString(strings.TrimSpace(inner.Dump()))
+							sb.WriteString(strings.TrimSpace(inner.Dump(0)))
 						}
 						opt["label"] = sb.String()
 						optionObjects = append(optionObjects, opt)
 						goto SkipChild
 					}
 				}
-				remainingChildren = append(remainingChildren, child)
 			SkipChild:
 			}
 			// Remove all children slots.
-			node.Children = remainingChildren
+			node.Children = nil
 
 			// If label slot was set, add label attribute.
 			if labelText != "" {
@@ -130,8 +136,6 @@ func (s SelectFieldFixer) Fix(nodes []html.Node) error {
 					})
 				}
 			}
-
-			node.Children = []html.Node{}
 		}
 	})
 	return nil
