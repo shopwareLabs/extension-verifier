@@ -372,6 +372,123 @@ func (t *TwigBlockNode) Dump() string {
 	return builder.String()
 }
 
+// TwigIfNode represents a Twig if block
+type TwigIfNode struct {
+	Condition        string
+	Children         NodeList
+	ElseIfConditions []string
+	ElseIfChildren   []NodeList
+	ElseChildren     NodeList
+	Line             int
+}
+
+// Dump returns the twig if block with proper formatting
+func (t *TwigIfNode) Dump() string {
+	var builder strings.Builder
+	indentStr := indentConfig.GetIndent()
+	builder.WriteString("{% if " + t.Condition + " %}")
+
+	// Filter out empty nodes and normalize newlines for if branch
+	var nonEmptyChildren NodeList
+	for _, child := range t.Children {
+		if raw, ok := child.(*RawNode); ok {
+			if strings.TrimSpace(raw.Text) != "" {
+				nonEmptyChildren = append(nonEmptyChildren, raw)
+			}
+		} else {
+			nonEmptyChildren = append(nonEmptyChildren, child)
+		}
+	}
+
+	if len(nonEmptyChildren) > 0 {
+		builder.WriteString("\n")
+		for i, child := range nonEmptyChildren {
+			if elementChild, ok := child.(*ElementNode); ok {
+				builder.WriteString(elementChild.dump(1))
+			} else {
+				builder.WriteString(indentStr)
+				builder.WriteString(strings.TrimSpace(child.Dump()))
+			}
+			if i < len(nonEmptyChildren)-1 {
+				// Add an extra newline between elements
+				builder.WriteString("\n")
+			}
+		}
+		builder.WriteString("\n")
+	}
+
+	// Handle elseif branches if they exist
+	for i, condition := range t.ElseIfConditions {
+		builder.WriteString("{% elseif " + condition + " %}")
+
+		// Filter out empty nodes and normalize newlines for elseif branch
+		nonEmptyChildren = NodeList{}
+		for _, child := range t.ElseIfChildren[i] {
+			if raw, ok := child.(*RawNode); ok {
+				if strings.TrimSpace(raw.Text) != "" {
+					nonEmptyChildren = append(nonEmptyChildren, raw)
+				}
+			} else {
+				nonEmptyChildren = append(nonEmptyChildren, child)
+			}
+		}
+
+		if len(nonEmptyChildren) > 0 {
+			builder.WriteString("\n")
+			for j, child := range nonEmptyChildren {
+				if elementChild, ok := child.(*ElementNode); ok {
+					builder.WriteString(elementChild.dump(1))
+				} else {
+					builder.WriteString(indentStr)
+					builder.WriteString(strings.TrimSpace(child.Dump()))
+				}
+				if j < len(nonEmptyChildren)-1 {
+					// Add an extra newline between elements
+					builder.WriteString("\n")
+				}
+			}
+			builder.WriteString("\n")
+		}
+	}
+
+	// Handle else branch if it exists
+	if len(t.ElseChildren) > 0 {
+		builder.WriteString("{% else %}")
+
+		// Filter out empty nodes and normalize newlines for else branch
+		var nonEmptyElseChildren NodeList
+		for _, child := range t.ElseChildren {
+			if raw, ok := child.(*RawNode); ok {
+				if strings.TrimSpace(raw.Text) != "" {
+					nonEmptyElseChildren = append(nonEmptyElseChildren, raw)
+				}
+			} else {
+				nonEmptyElseChildren = append(nonEmptyElseChildren, child)
+			}
+		}
+
+		if len(nonEmptyElseChildren) > 0 {
+			builder.WriteString("\n")
+			for i, child := range nonEmptyElseChildren {
+				if elementChild, ok := child.(*ElementNode); ok {
+					builder.WriteString(elementChild.dump(1))
+				} else {
+					builder.WriteString(indentStr)
+					builder.WriteString(strings.TrimSpace(child.Dump()))
+				}
+				if i < len(nonEmptyElseChildren)-1 {
+					// Add an extra newline between elements
+					builder.WriteString("\n")
+				}
+			}
+			builder.WriteString("\n")
+		}
+	}
+
+	builder.WriteString("{% endif %}")
+	return builder.String()
+}
+
 // ParentNode represents a twig parent() call
 type ParentNode struct {
 	Line int
@@ -428,7 +545,7 @@ func (p *Parser) getLineAt(pos int) int {
 // parseComment parses an HTML comment and returns a CommentNode
 func (p *Parser) parseComment() (*CommentNode, error) {
 	if p.peek(4) != "<!--" {
-		return nil, fmt.Errorf("expected comment at pos %d", p.pos)
+		return nil, nil
 	}
 	startPos := p.pos
 	p.pos += 4 // skip "<!--"
@@ -493,11 +610,23 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 			if block != nil {
 				nodes = append(nodes, block)
 				rawStart = p.pos
-			} else {
-				// If it wasn't a block, reset position and continue as raw text
-				p.pos = startPos
+				continue
 			}
-			continue
+
+			// If not a block, try parsing as an if statement
+			p.pos = startPos
+			ifNode, err := p.parseTwigIf()
+			if err != nil {
+				return nodes, err
+			}
+			if ifNode != nil {
+				nodes = append(nodes, ifNode)
+				rawStart = p.pos
+				continue
+			}
+
+			// If it wasn't a block or if statement, reset position and continue as raw text
+			p.pos = startPos
 		}
 
 		// Parse template expressions {{ ... }}
@@ -600,7 +729,7 @@ func (p *Parser) parseElement() (Node, error) {
 	// Record start position for line number.
 	startPos := p.pos
 	if p.current() != '<' {
-		return nil, fmt.Errorf("expected '<' at pos %d", p.pos)
+		return nil, nil
 	}
 	p.pos++ // skip '<'
 	p.skipWhitespace()
@@ -615,7 +744,7 @@ func (p *Parser) parseElement() (Node, error) {
 		Tag:        tagName,
 		Attributes: []Attribute{},
 		Children:   NodeList{},
-		Line:       p.getLineAt(startPos), // assign starting line
+		Line:       p.getLineAt(startPos),
 	}
 
 	// Parse element attributes.
@@ -926,10 +1055,248 @@ func (p *Parser) parseTwigBlock() (Node, error) {
 	}, nil
 }
 
+// parseTwigIf parses a {% if ... %} ... {% endif %} block and returns a TwigIfNode
+func (p *Parser) parseTwigIf() (Node, error) {
+	if p.peek(2) != "{%" {
+		return nil, nil
+	}
+
+	startPos := p.pos
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+
+	// Check if it's an if statement
+	if !strings.HasPrefix(p.input[p.pos:], "if") {
+		p.pos = startPos
+		return nil, nil
+	}
+	p.pos += 2 // skip "if"
+	p.skipWhitespace()
+
+	// Parse condition
+	start := p.pos
+	for p.pos < p.length && p.peek(2) != "%}" {
+		p.pos++
+	}
+	condition := strings.TrimSpace(p.input[start:p.pos])
+
+	if p.peek(2) != "%}" {
+		return nil, fmt.Errorf("unclosed if tag at pos %d", startPos)
+	}
+	p.pos += 2 // skip "%}"
+
+	// Parse the if branch
+	ifChildren, err := p.parseIfBranch()
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize elseif condition and children slices
+	var elseIfConditions []string
+	var elseIfChildren []NodeList
+
+	// Parse any elseif branches
+	for {
+		// Check if we've reached an elseif
+		if p.peek(2) == "{%" && strings.HasPrefix(p.input[p.pos+2:], " elseif") {
+			p.pos += 2 // skip "{%"
+			p.skipWhitespace()
+			p.pos += 6 // skip "elseif"
+			p.skipWhitespace()
+
+			// Parse elseif condition
+			start := p.pos
+			for p.pos < p.length && p.peek(2) != "%}" {
+				p.pos++
+			}
+			elseifCondition := strings.TrimSpace(p.input[start:p.pos])
+
+			if p.peek(2) != "%}" {
+				return nil, fmt.Errorf("unclosed elseif tag at pos %d", p.pos)
+			}
+			p.pos += 2 // skip "%}"
+
+			// Parse elseif branch
+			elseifBranch, err := p.parseIfBranch()
+			if err != nil {
+				return nil, err
+			}
+
+			// Add to slices
+			elseIfConditions = append(elseIfConditions, elseifCondition)
+			elseIfChildren = append(elseIfChildren, elseifBranch)
+		} else {
+			break
+		}
+	}
+
+	// Parse the else branch if it exists
+	var elseChildren NodeList
+	if p.peek(2) == "{%" && strings.HasPrefix(p.input[p.pos+2:], " else") {
+		p.pos += 2 // skip "{%"
+		p.skipWhitespace()
+		p.pos += 4 // skip "else"
+		p.skipWhitespace()
+
+		// Skip to the end of the else tag
+		for p.pos < p.length && p.peek(2) != "%}" {
+			p.pos++
+		}
+		if p.peek(2) != "%}" {
+			return nil, fmt.Errorf("unclosed else tag at pos %d", p.pos)
+		}
+		p.pos += 2 // skip "%}"
+
+		// Parse else branch
+		elseChildren, err = p.parseIfBranch()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Look for endif
+	if p.peek(2) != "{%" {
+		return nil, fmt.Errorf("missing endif at pos %d", p.pos)
+	}
+	p.pos += 2 // skip "{%"
+	p.skipWhitespace()
+
+	if !strings.HasPrefix(p.input[p.pos:], "endif") {
+		return nil, fmt.Errorf("missing endif at pos %d", p.pos)
+	}
+	p.pos += 5 // skip "endif"
+
+	// Skip to end of closing tag
+	for p.pos < p.length && p.peek(2) != "%}" {
+		p.pos++
+	}
+	if p.peek(2) != "%}" {
+		return nil, fmt.Errorf("unclosed endif tag at pos %d", p.pos)
+	}
+	p.pos += 2 // skip "%}"
+
+	return &TwigIfNode{
+		Condition:        condition,
+		Children:         ifChildren,
+		ElseIfConditions: elseIfConditions,
+		ElseIfChildren:   elseIfChildren,
+		ElseChildren:     elseChildren,
+		Line:             p.getLineAt(startPos),
+	}, nil
+}
+
+// parseIfBranch parses the contents of an if or else branch until it encounters
+// an {% else %}, {% elseif %} or {% endif %} tag
+func (p *Parser) parseIfBranch() (NodeList, error) {
+	var nodes NodeList
+	rawStart := p.pos
+
+	for p.pos < p.length {
+		// Check for else, elseif or endif
+		if p.peek(2) == "{%" {
+			nextTag := p.input[p.pos+2:]
+			if strings.HasPrefix(strings.TrimSpace(nextTag), "else") ||
+				strings.HasPrefix(strings.TrimSpace(nextTag), "elseif") ||
+				strings.HasPrefix(strings.TrimSpace(nextTag), "endif") {
+				break
+			}
+		}
+
+		// Handle raw text
+		if p.pos > rawStart {
+			if p.peek(2) == "{%" || p.peek(2) == "{{" || p.peek(4) == "<!--" || p.current() == '<' {
+				text := p.input[rawStart:p.pos]
+				if text != "" {
+					nodes = append(nodes, &RawNode{
+						Text: text,
+						Line: p.getLineAt(rawStart),
+					})
+				}
+				rawStart = p.pos
+			}
+		}
+
+		// Try parsing twig directives first
+		directive, err := p.parseTwigDirective()
+		if err != nil {
+			return nodes, err
+		}
+		if directive != nil {
+			nodes = append(nodes, directive)
+			rawStart = p.pos
+			continue
+		}
+
+		// If not a directive, try parsing as a block
+		block, err := p.parseTwigBlock()
+		if err != nil {
+			return nodes, err
+		}
+		if block != nil {
+			nodes = append(nodes, block)
+			rawStart = p.pos
+			continue
+		}
+
+		// Try parsing template expressions {{ ... }}
+		expr, err := p.parseTemplateExpression()
+		if err != nil {
+			return nodes, err
+		}
+		if expr != nil {
+			nodes = append(nodes, expr)
+			rawStart = p.pos
+			continue
+		}
+
+		// Try parsing HTML comments
+		comment, err := p.parseComment()
+		if err != nil {
+			return nodes, err
+		}
+		if comment != nil {
+			nodes = append(nodes, comment)
+			rawStart = p.pos
+			continue
+		}
+
+		// Try parsing HTML elements
+		element, err := p.parseElement()
+		if err != nil {
+			return nodes, err
+		}
+		if element != nil {
+			nodes = append(nodes, element)
+			rawStart = p.pos
+			continue
+		}
+
+		// If nothing matched, advance one character
+		if p.pos < p.length {
+			p.pos++
+		} else {
+			break
+		}
+	}
+
+	// Add any remaining raw text
+	if p.pos > rawStart {
+		text := p.input[rawStart:p.pos]
+		if text != "" {
+			nodes = append(nodes, &RawNode{
+				Text: text,
+				Line: p.getLineAt(rawStart),
+			})
+		}
+	}
+
+	return nodes, nil
+}
+
 // parseTemplateExpression parses a {{...}} template expression and returns a TemplateExpressionNode
 func (p *Parser) parseTemplateExpression() (*TemplateExpressionNode, error) {
 	if p.peek(2) != "{{" {
-		return nil, fmt.Errorf("expected template expression at pos %d", p.pos)
+		return nil, nil
 	}
 
 	startPos := p.pos
