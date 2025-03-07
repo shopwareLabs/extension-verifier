@@ -331,6 +331,9 @@ type TwigBlockNode struct {
 func (t *TwigBlockNode) Dump(indent int) string {
 	var builder strings.Builder
 	indentStr := indentConfig.GetIndent()
+	for i := 0; i < indent; i++ {
+		builder.WriteString(indentStr)
+	}
 	builder.WriteString("{% block " + t.Name + " %}")
 
 	// Filter out empty nodes and normalize newlines
@@ -339,6 +342,10 @@ func (t *TwigBlockNode) Dump(indent int) string {
 		if raw, ok := child.(*RawNode); ok {
 			if strings.TrimSpace(raw.Text) != "" {
 				nonEmptyChildren = append(nonEmptyChildren, raw)
+			}
+		} else if twigBlock, ok := child.(*TwigBlockNode); ok {
+			if strings.TrimSpace(twigBlock.Dump(0)) != "" {
+				nonEmptyChildren = append(nonEmptyChildren, twigBlock)
 			}
 		} else {
 			nonEmptyChildren = append(nonEmptyChildren, child)
@@ -351,8 +358,7 @@ func (t *TwigBlockNode) Dump(indent int) string {
 			if elementChild, ok := child.(*ElementNode); ok {
 				builder.WriteString(elementChild.Dump(indent + 1))
 			} else {
-				builder.WriteString(indentStr)
-				builder.WriteString(strings.TrimSpace(child.Dump(indent + 1)))
+				builder.WriteString(child.Dump(indent + 1))
 			}
 			if i < len(nonEmptyChildren)-1 {
 				// Add an extra newline between elements
@@ -360,9 +366,16 @@ func (t *TwigBlockNode) Dump(indent int) string {
 			}
 		}
 		builder.WriteString("\n")
+
+		for i := 0; i < indent; i++ {
+			builder.WriteString(indentStr)
+		}
+
+		builder.WriteString("{% endblock %}")
+	} else {
+		builder.WriteString("{% endblock %}")
 	}
 
-	builder.WriteString("{% endblock %}")
 	return builder.String()
 }
 
