@@ -20,7 +20,7 @@ func runFixerOnString(fixer AdminTwigFixer, content string) (string, error) {
 	var buf strings.Builder
 
 	for _, node := range nodes {
-		buf.WriteString(node.Dump())
+		buf.WriteString(node.Dump(0))
 	}
 
 	return buf.String(), nil

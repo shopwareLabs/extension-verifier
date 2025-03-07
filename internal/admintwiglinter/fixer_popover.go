@@ -38,24 +38,35 @@ func (p PopoverFixer) Fix(node []html.Node) error {
 			node.Tag = "mt-floating-ui"
 
 			hasVIf := false
+			var newAttrs html.NodeList
 
-			for n, attr := range node.Attributes {
-				if attr.Key == "v-if" {
-					node.Attributes[n].Key = ":isOpened"
-					hasVIf = true
-				}
-
-				if attr.Key == ":zIndex" || attr.Key == ":resizeWidth" {
-					node.Attributes = append(node.Attributes[:n], node.Attributes[n+1:]...)
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					switch attr.Key {
+					case "v-if":
+						attr.Key = ":isOpened"
+						newAttrs = append(newAttrs, attr)
+						hasVIf = true
+					case ":zIndex", ":resizeWidth":
+						// Skip these attributes
+					default:
+						newAttrs = append(newAttrs, attr)
+					}
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
 
 			if !hasVIf {
-				node.Attributes = append(node.Attributes, html.Attribute{
+				newAttrs = append(newAttrs, html.Attribute{
 					Key:   ":isOpened",
 					Value: "true",
 				})
 			}
+
+			node.Attributes = newAttrs
 		}
 	})
 

@@ -36,48 +36,60 @@ func (t TextFieldFixer) Fix(nodes []html.Node) error {
 	html.TraverseNode(nodes, func(node *html.ElementNode) {
 		if node.Tag == "sw-text-field" {
 			node.Tag = "mt-text-field"
-			var newAttrs []html.Attribute
+			var newAttrs html.NodeList
 			// Process attributes conversion.
-			for _, attr := range node.Attributes {
-				switch attr.Key {
-				case "value":
-					attr.Key = "model-value"
-					newAttrs = append(newAttrs, attr)
-				case "v-model:value":
-					attr.Key = "v-model"
-					newAttrs = append(newAttrs, attr)
-				case "size":
-					if attr.Value == "medium" {
-						attr.Value = "default"
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					switch attr.Key {
+					case "value":
+						attr.Key = "model-value"
+						newAttrs = append(newAttrs, attr)
+					case "v-model:value":
+						attr.Key = "v-model"
+						newAttrs = append(newAttrs, attr)
+					case "size":
+						if attr.Value == "medium" {
+							attr.Value = "default"
+						}
+						newAttrs = append(newAttrs, attr)
+					case "isInvalid", "aiBadge", "@base-field-mounted":
+						// remove these attributes
+					case "@update:value":
+						attr.Key = "@update:model-value"
+						newAttrs = append(newAttrs, attr)
+					default:
+						newAttrs = append(newAttrs, attr)
 					}
-					newAttrs = append(newAttrs, attr)
-				case "isInvalid", "aiBadge", "@base-field-mounted":
-					// remove these attributes
-				case "@update:value":
-					attr.Key = "@update:model-value"
-					newAttrs = append(newAttrs, attr)
-				default:
-					newAttrs = append(newAttrs, attr)
+				} else {
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
 			node.Attributes = newAttrs
 
 			// Process label slot: convert <template #label>...</template> to label prop.
 			label := ""
+			var remainingChildren html.NodeList
 			for _, child := range node.Children {
 				if elem, ok := child.(*html.ElementNode); ok && elem.Tag == "template" {
 					for _, a := range elem.Attributes {
-						if a.Key == "#label" {
-							var sb strings.Builder
-							for _, inner := range elem.Children {
-								sb.WriteString(strings.TrimSpace(inner.Dump()))
+						if attr, ok := a.(html.Attribute); ok {
+							if attr.Key == "#label" {
+								var sb strings.Builder
+								for _, inner := range elem.Children {
+									sb.WriteString(strings.TrimSpace(inner.Dump(0)))
+								}
+								label = sb.String()
+								goto SkipChild
 							}
-							label = sb.String()
 						}
 					}
 				}
+				remainingChildren = append(remainingChildren, child)
+			SkipChild:
 			}
-			node.Children = []html.Node{}
+			node.Children = remainingChildren
 			if label != "" {
 				node.Attributes = append(node.Attributes, html.Attribute{
 					Key:   "label",

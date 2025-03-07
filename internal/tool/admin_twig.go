@@ -102,7 +102,7 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 				}
 			}
 
-			return os.WriteFile(path, []byte(parsed.Dump()), os.ModePerm)
+			return os.WriteFile(path, []byte(parsed.Dump(0)), os.ModePerm)
 		})
 
 		if err != nil {
@@ -142,13 +142,13 @@ func (a AdminTwigLinter) Format(ctx context.Context, config ToolConfig, dryRun b
 			}
 
 			if dryRun {
-				diffs := dmp.DiffMain(string(file), parsed.Dump(), false)
+				diffs := dmp.DiffMain(string(file), parsed.Dump(0), false)
 
 				fmt.Println(dmp.DiffPrettyText(diffs))
 
 				return nil
 			} else {
-				return os.WriteFile(path, []byte(parsed.Dump()), os.ModePerm)
+				return os.WriteFile(path, []byte(parsed.Dump(0)), os.ModePerm)
 			}
 		})
 

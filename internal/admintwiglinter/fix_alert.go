@@ -34,30 +34,36 @@ func (a AlertFixer) Fix(nodes []html.Node) error {
 	html.TraverseNode(nodes, func(node *html.ElementNode) {
 		if node.Tag == "sw-alert" {
 			node.Tag = "mt-banner"
-			var newAttrs []html.Attribute
+			var newAttrs html.NodeList
 
-			for _, attr := range node.Attributes {
-				if attr.Key == "variant" {
-					switch attr.Value {
-					case "success":
-						attr.Value = "positive"
-						newAttrs = append(newAttrs, attr)
-					case "error":
-						attr.Value = "critical"
-						newAttrs = append(newAttrs, attr)
-					case "warning":
-						attr.Value = "attention"
-						newAttrs = append(newAttrs, attr)
-					case "info":
-						// Keep info as is
-						newAttrs = append(newAttrs, attr)
-					default:
-						// Keep any other variants unchanged
+			for _, attrNode := range node.Attributes {
+				// Check if the attribute is an html.Attribute
+				if attr, ok := attrNode.(html.Attribute); ok {
+					if attr.Key == "variant" {
+						switch attr.Value {
+						case "success":
+							attr.Value = "positive"
+							newAttrs = append(newAttrs, attr)
+						case "error":
+							attr.Value = "critical"
+							newAttrs = append(newAttrs, attr)
+						case "warning":
+							attr.Value = "attention"
+							newAttrs = append(newAttrs, attr)
+						case "info":
+							// Keep info as is
+							newAttrs = append(newAttrs, attr)
+						default:
+							// Keep any other variants unchanged
+							newAttrs = append(newAttrs, attr)
+						}
+					} else {
+						// Preserve all other attributes
 						newAttrs = append(newAttrs, attr)
 					}
 				} else {
-					// Preserve all other attributes
-					newAttrs = append(newAttrs, attr)
+					// If it's not an html.Attribute (e.g., TwigIfNode), preserve it as is
+					newAttrs = append(newAttrs, attrNode)
 				}
 			}
 
