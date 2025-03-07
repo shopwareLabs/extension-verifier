@@ -160,6 +160,8 @@ func (e *ElementNode) Dump(indent int) string {
 
 	builder.WriteString("<" + e.Tag)
 
+	attributesDidNewLine := false
+
 	// Add attributes
 	if len(e.Attributes) > 0 {
 		if len(e.Attributes) == 1 {
@@ -170,6 +172,7 @@ func (e *ElementNode) Dump(indent int) string {
 				builder.WriteString("\n")
 				builder.WriteString(attributeStr)
 				builder.WriteString("\n")
+				attributesDidNewLine = true
 			} else {
 				if !isIfNode {
 					attributeStr = e.Attributes[0].Dump(0)
@@ -180,12 +183,16 @@ func (e *ElementNode) Dump(indent int) string {
 		} else {
 			for _, attr := range e.Attributes {
 				builder.WriteString("\n")
+				attributesDidNewLine = true
 				builder.WriteString(attr.Dump(indent + 1))
 			}
 			builder.WriteString("\n")
-			for i := 0; i < indent; i++ {
-				builder.WriteString(indentStr)
-			}
+		}
+	}
+
+	if attributesDidNewLine {
+		for i := 0; i < indent; i++ {
+			builder.WriteString(indentStr)
 		}
 	}
 
@@ -513,7 +520,15 @@ type ParentNode struct {
 }
 
 func (p *ParentNode) Dump(indent int) string {
-	return "{% parent() %}"
+	var builder strings.Builder
+	indentStr := indentConfig.GetIndent()
+	for i := 0; i < indent; i++ {
+		builder.WriteString(indentStr)
+	}
+
+	builder.WriteString("{% parent() %}")
+
+	return builder.String()
 }
 
 // Parser holds the state for our simple parser.
