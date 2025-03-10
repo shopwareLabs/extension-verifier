@@ -67,8 +67,8 @@ func (nodeList NodeList) Dump(indent int) string {
 	var builder strings.Builder
 	for i, node := range nodeList {
 		if _, ok := node.(*CommentNode); ok {
-			// Don't add newlines for comments
 			builder.WriteString(node.Dump(indent))
+			builder.WriteString("\n\n")
 			continue
 		}
 		if i > 0 {
@@ -125,7 +125,15 @@ type CommentNode struct {
 
 // Dump returns the comment text with HTML comment syntax
 func (c *CommentNode) Dump(indent int) string {
-	return "<!-- " + c.Text + " -->"
+	var builder strings.Builder
+	indentStr := indentConfig.GetIndent()
+	for i := 0; i < indent; i++ {
+		builder.WriteString(indentStr)
+	}
+
+	builder.WriteString("<!-- " + c.Text + " -->")
+
+	return builder.String()
 }
 
 // TemplateExpressionNode represents a {{...}} template expression
@@ -615,7 +623,7 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 		if p.peek(2) == "{%" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
-				if text != "" {
+				if strings.TrimSpace(text) != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
 						Line: p.getLineAt(rawStart),
