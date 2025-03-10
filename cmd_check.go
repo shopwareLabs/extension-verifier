@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
@@ -19,6 +18,10 @@ var checkCommand = &cobra.Command{
 		reportingFormat, _ := cmd.Flags().GetString("reporter")
 		checkAgainst, _ := cmd.Flags().GetString("check-against")
 		tmpDir, err := os.MkdirTemp(os.TempDir(), "analyse-extension-*")
+
+		if reportingFormat == "" {
+			reportingFormat = detectDefaultReporter()
+		}
 
 		if err != nil {
 			return err
@@ -71,66 +74,18 @@ var checkCommand = &cobra.Command{
 			return err
 		}
 
-		if err := doCIReport(result); err != nil {
-			return err
-		}
-
-		if reportingFormat == "summary" {
-			// Group results by file
-			fileGroups := make(map[string][]tool.CheckResult)
-			for _, r := range result.Results {
-				if r.Path == "" {
-					r.Path = "general"
-				}
-
-				fileGroups[r.Path] = append(fileGroups[r.Path], r)
-			}
-
-			// Print results grouped by file
-			totalProblems := 0
-			errorCount := 0
-			warningCount := 0
-
-			for file, results := range fileGroups {
-				fmt.Printf("\n%s\n", file)
-				for _, r := range results {
-					totalProblems++
-					if r.Severity == "error" {
-						errorCount++
-					} else if r.Severity == "warning" {
-						warningCount++
-					}
-					fmt.Printf("  %d  %-7s  %s  %s\n", r.Line, r.Severity, r.Message, r.Identifier)
-				}
-			}
-
-			fmt.Printf("\n✖ %d problems (%d errors, %d warnings)\n", totalProblems, errorCount, warningCount)
-		} else {
-			j, err := json.Marshal(result)
-
-			if err != nil {
-				return err
-			}
-
-			os.Stdout.Write(j)
-		}
-
-		if result.HasErrors() {
-			os.Exit(1)
-		}
-
-		return nil
+		return doCheckReport(result, reportingFormat)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(checkCommand)
-	checkCommand.PersistentFlags().String("reporter", "summary", "Reporting format (summary, json)")
+	checkCommand.PersistentFlags().String("reporter", "", "Reporting format (summary, json, github, junit, markdown)")
 	checkCommand.PersistentFlags().String("check-against", "highest", "Check against Shopware Version (highest, lowest)")
 	checkCommand.PreRunE = func(cmd *cobra.Command, args []string) error {
 		reporter, _ := cmd.Flags().GetString("reporter")
-		if reporter != "summary" && reporter != "json" {
-			return fmt.Errorf("invalid reporter format: %s. Must be either 'summary' or 'json'", reporter)
+		if reporter != "summary" && reporter != "json" && reporter != "github" && reporter != "junit" && reporter != "markdown" && reporter != "" {
+			return fmt.Errorf("invalid reporter format: %s. Must be either 'summary', 'json', 'github', 'junit' or 'markdown'", reporter)
 		}
 
 		mode, _ := cmd.Flags().GetString("check-against")

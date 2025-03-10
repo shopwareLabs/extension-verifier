@@ -45,6 +45,18 @@ jobs:
               run: docker run --rm -e GITHUB_STEP_SUMMARY -e GITHUB_ACTIONS -v $GITHUB_STEP_SUMMARY:$GITHUB_STEP_SUMMARY -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest check /ext --check-against ${{ matrix.version-selection }}
 ```
 
+## Reporter
+
+The check command supports various reporters:
+
+- summary
+- markdown
+- json
+- github (GitHub Code annotations + Summary)
+- junit
+
+The JUnit output can be used by various CI/CD providers to provide better summary.
+
 # Contribution
 
 To run this tool locally you need PHP, Node, NPM and Go.
