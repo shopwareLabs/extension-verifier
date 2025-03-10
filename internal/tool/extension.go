@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"sort"
 
@@ -69,29 +68,44 @@ func determineVersionRange(cfg *ToolConfig) error {
 	return nil
 }
 
+type packagistResponse struct {
+	Packages struct {
+		Core []struct {
+			Version string `json:"version_normalized"`
+		} `json:"shopware/core"`
+	} `json:"packages"`
+}
+
 func getShopwareVersions() ([]string, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://shopware.github.io/shopware-cli/versions.json", http.NoBody)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://repo.packagist.org/p2/shopware/core.json", http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("create composer version request: %w", err)
 	}
+
+	req.Header.Set("User-Agent", "Shopware Extension Verifier")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetch composer versions: %w", err)
 	}
 	defer func() {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}()
 
-	versionString, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read version body: %w", err)
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("fetch composer versions: %s", resp.Status)
 	}
+
+	var pckResponse packagistResponse
 
 	var versions []string
-	if err := json.Unmarshal(versionString, &versions); err != nil {
-		return nil, fmt.Errorf("unmarshal composer versions: %w", err)
+
+	if err := json.NewDecoder(resp.Body).Decode(&pckResponse); err != nil {
+		return nil, fmt.Errorf("decode composer versions: %w", err)
 	}
 
+	for _, v := range pckResponse.Packages.Core {
+		versions = append(versions, v.Version)
+	}
 	return versions, nil
 }
