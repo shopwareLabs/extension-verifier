@@ -67,8 +67,8 @@ func (nodeList NodeList) Dump(indent int) string {
 	var builder strings.Builder
 	for i, node := range nodeList {
 		if _, ok := node.(*CommentNode); ok {
-			// Don't add newlines for comments
 			builder.WriteString(node.Dump(indent))
+			builder.WriteString("\n\n")
 			continue
 		}
 		if i > 0 {
@@ -125,7 +125,15 @@ type CommentNode struct {
 
 // Dump returns the comment text with HTML comment syntax
 func (c *CommentNode) Dump(indent int) string {
-	return "<!-- " + c.Text + " -->"
+	var builder strings.Builder
+	indentStr := indentConfig.GetIndent()
+	for i := 0; i < indent; i++ {
+		builder.WriteString(indentStr)
+	}
+
+	builder.WriteString("<!-- " + c.Text + " -->")
+
+	return builder.String()
 }
 
 // TemplateExpressionNode represents a {{...}} template expression
@@ -216,7 +224,7 @@ func (e *ElementNode) Dump(indent int) string {
 		for _, child := range e.Children {
 			if tplExpr, ok := child.(*TemplateExpressionNode); ok {
 				multipleTemplateExpressions++
-				if len(tplExpr.Expression) > 30 {
+				if len(tplExpr.Dump(0)) > 30 {
 					hasLongTemplateExpression = true
 				}
 			} else if _, ok := child.(*RawNode); !ok {
@@ -242,13 +250,7 @@ func (e *ElementNode) Dump(indent int) string {
 			}
 		}
 
-		// Check if this is a TwigBlock special structure that preserves exact formatting
-		isSpecialTwigStructure := false
-		if strings.Contains(e.Tag, "sw-tabs-item") {
-			isSpecialTwigStructure = true
-		}
-
-		if allSimpleNodes && !isSpecialTwigStructure {
+		if allSimpleNodes {
 			// Format based on content
 			if hasLongTemplateExpression || (multipleTemplateExpressions > 1 && !multipleShortTemplateExpressions) {
 				// For template expressions that are long or multiple long ones, add nice formatting
@@ -279,11 +281,6 @@ func (e *ElementNode) Dump(indent int) string {
 				for _, child := range e.Children {
 					builder.WriteString(child.Dump(indent))
 				}
-			}
-		} else if isSpecialTwigStructure {
-			// For special Twig structures like in the failing test, preserve exact formatting
-			for _, child := range e.Children {
-				builder.WriteString(child.Dump(indent))
 			}
 		} else {
 			// For complex nodes, format with proper indentation
@@ -440,6 +437,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 
 	// Handle elseif branches if they exist
 	for i, condition := range t.ElseIfConditions {
+		for i := 0; i < indent; i++ {
+			builder.WriteString(indentStr)
+		}
 		builder.WriteString("{% elseif " + condition + " %}")
 
 		// Filter out empty nodes and normalize newlines for elseif branch
@@ -460,7 +460,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 				if elementChild, ok := child.(*ElementNode); ok {
 					builder.WriteString(elementChild.Dump(indent + 1))
 				} else {
-					builder.WriteString(indentStr)
+					for i := 0; i < indent+1; i++ {
+						builder.WriteString(indentStr)
+					}
 					builder.WriteString(strings.TrimSpace(child.Dump(indent + 1)))
 				}
 				if j < len(nonEmptyChildren)-1 {
@@ -474,6 +476,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 
 	// Handle else branch if it exists
 	if len(t.ElseChildren) > 0 {
+		for i := 0; i < indent; i++ {
+			builder.WriteString(indentStr)
+		}
 		builder.WriteString("{% else %}")
 
 		// Filter out empty nodes and normalize newlines for else branch
@@ -494,7 +499,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 				if elementChild, ok := child.(*ElementNode); ok {
 					builder.WriteString(elementChild.Dump(indent + 1))
 				} else {
-					builder.WriteString(indentStr)
+					for i := 0; i < indent+1; i++ {
+						builder.WriteString(indentStr)
+					}
 					builder.WriteString(strings.TrimSpace(child.Dump(indent + 1)))
 				}
 				if i < len(nonEmptyElseChildren)-1 {
@@ -615,7 +622,7 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 		if p.peek(2) == "{%" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
-				if text != "" {
+				if strings.TrimSpace(text) != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
 						Line: p.getLineAt(rawStart),
@@ -782,10 +789,17 @@ func (p *Parser) parseElement() (Node, error) {
 	// Parse element attributes.
 	for p.pos < p.length {
 		p.skipWhitespace()
-		if p.current() == '{' {
-			ifNode, _ := p.parseTwigIf()
+		// Check for Twig directives within attributes
+		if p.peek(2) == "{%" {
+			ifNode, err := p.parseTwigIf()
+			if err != nil {
+				return nil, err
+			}
 			if ifNode != nil {
 				node.Attributes = append(node.Attributes, ifNode)
+				// After parsing a Twig directive, we need to skip whitespace again
+				p.skipWhitespace()
+				continue
 			}
 		}
 
@@ -824,7 +838,18 @@ func (p *Parser) parseElement() (Node, error) {
 			return node, nil
 		}
 	} else {
-		return nil, fmt.Errorf("expected '>' at pos %d", p.pos)
+		// Add more context to the error message
+		surroundingText := ""
+		start := p.pos - 10
+		if start < 0 {
+			start = 0
+		}
+		end := p.pos + 10
+		if end > p.length {
+			end = p.length
+		}
+		surroundingText = p.input[start:end]
+		return nil, fmt.Errorf("expected '>' at pos %d, surrounding text: '%s', current byte: '%c'", p.pos, surroundingText, p.current())
 	}
 
 	// Parse children until the corresponding closing tag.
@@ -972,11 +997,12 @@ func (p *Parser) parseAttrValue() string {
 	if p.current() == '"' {
 		p.pos++ // skip opening "
 		start := p.pos
+		// Continue until we find a closing quote or reach the end
 		for p.pos < p.length && p.current() != '"' {
 			p.pos++
 		}
 		val := p.input[start:p.pos]
-		if p.current() == '"' {
+		if p.pos < p.length && p.current() == '"' {
 			p.pos++ // skip closing "
 		}
 		return val
@@ -984,7 +1010,7 @@ func (p *Parser) parseAttrValue() string {
 	// Allow unquoted values.
 	start := p.pos
 	for p.pos < p.length &&
-		p.current() != ' ' && p.current() != '>' {
+		p.current() != ' ' && p.current() != '>' && p.current() != '\n' && p.current() != '\r' {
 		p.pos++
 	}
 	return p.input[start:p.pos]
