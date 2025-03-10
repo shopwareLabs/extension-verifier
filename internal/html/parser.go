@@ -224,7 +224,7 @@ func (e *ElementNode) Dump(indent int) string {
 		for _, child := range e.Children {
 			if tplExpr, ok := child.(*TemplateExpressionNode); ok {
 				multipleTemplateExpressions++
-				if len(tplExpr.Expression) > 30 {
+				if len(tplExpr.Dump(0)) > 30 {
 					hasLongTemplateExpression = true
 				}
 			} else if _, ok := child.(*RawNode); !ok {
@@ -250,13 +250,7 @@ func (e *ElementNode) Dump(indent int) string {
 			}
 		}
 
-		// Check if this is a TwigBlock special structure that preserves exact formatting
-		isSpecialTwigStructure := false
-		if strings.Contains(e.Tag, "sw-tabs-item") {
-			isSpecialTwigStructure = true
-		}
-
-		if allSimpleNodes && !isSpecialTwigStructure {
+		if allSimpleNodes {
 			// Format based on content
 			if hasLongTemplateExpression || (multipleTemplateExpressions > 1 && !multipleShortTemplateExpressions) {
 				// For template expressions that are long or multiple long ones, add nice formatting
@@ -287,11 +281,6 @@ func (e *ElementNode) Dump(indent int) string {
 				for _, child := range e.Children {
 					builder.WriteString(child.Dump(indent))
 				}
-			}
-		} else if isSpecialTwigStructure {
-			// For special Twig structures like in the failing test, preserve exact formatting
-			for _, child := range e.Children {
-				builder.WriteString(child.Dump(indent))
 			}
 		} else {
 			// For complex nodes, format with proper indentation
