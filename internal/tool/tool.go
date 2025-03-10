@@ -22,6 +22,7 @@ type ToolConfig struct {
 	MinShopwareVersion string
 	MaxShopwareVersion string
 	CheckAgainst       string
+	ValidationIgnores  []string
 	Extension          extension.Extension
 }
 

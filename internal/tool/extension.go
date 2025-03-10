@@ -14,7 +14,8 @@ import (
 
 func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) {
 	cfg := &ToolConfig{
-		Extension: ext,
+		Extension:         ext,
+		ValidationIgnores: ext.GetExtensionConfig().Validation.Ignore,
 	}
 
 	if err := determineVersionRange(cfg); err != nil {
