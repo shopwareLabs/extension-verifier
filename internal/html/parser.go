@@ -437,6 +437,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 
 	// Handle elseif branches if they exist
 	for i, condition := range t.ElseIfConditions {
+		for i := 0; i < indent; i++ {
+			builder.WriteString(indentStr)
+		}
 		builder.WriteString("{% elseif " + condition + " %}")
 
 		// Filter out empty nodes and normalize newlines for elseif branch
@@ -457,7 +460,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 				if elementChild, ok := child.(*ElementNode); ok {
 					builder.WriteString(elementChild.Dump(indent + 1))
 				} else {
-					builder.WriteString(indentStr)
+					for i := 0; i < indent+1; i++ {
+						builder.WriteString(indentStr)
+					}
 					builder.WriteString(strings.TrimSpace(child.Dump(indent + 1)))
 				}
 				if j < len(nonEmptyChildren)-1 {
@@ -471,6 +476,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 
 	// Handle else branch if it exists
 	if len(t.ElseChildren) > 0 {
+		for i := 0; i < indent; i++ {
+			builder.WriteString(indentStr)
+		}
 		builder.WriteString("{% else %}")
 
 		// Filter out empty nodes and normalize newlines for else branch
@@ -491,7 +499,9 @@ func (t *TwigIfNode) Dump(indent int) string {
 				if elementChild, ok := child.(*ElementNode); ok {
 					builder.WriteString(elementChild.Dump(indent + 1))
 				} else {
-					builder.WriteString(indentStr)
+					for i := 0; i < indent+1; i++ {
+						builder.WriteString(indentStr)
+					}
 					builder.WriteString(strings.TrimSpace(child.Dump(indent + 1)))
 				}
 				if i < len(nonEmptyElseChildren)-1 {
@@ -779,10 +789,17 @@ func (p *Parser) parseElement() (Node, error) {
 	// Parse element attributes.
 	for p.pos < p.length {
 		p.skipWhitespace()
-		if p.current() == '{' {
-			ifNode, _ := p.parseTwigIf()
+		// Check for Twig directives within attributes
+		if p.peek(2) == "{%" {
+			ifNode, err := p.parseTwigIf()
+			if err != nil {
+				return nil, err
+			}
 			if ifNode != nil {
 				node.Attributes = append(node.Attributes, ifNode)
+				// After parsing a Twig directive, we need to skip whitespace again
+				p.skipWhitespace()
+				continue
 			}
 		}
 
@@ -821,7 +838,18 @@ func (p *Parser) parseElement() (Node, error) {
 			return node, nil
 		}
 	} else {
-		return nil, fmt.Errorf("expected '>' at pos %d", p.pos)
+		// Add more context to the error message
+		surroundingText := ""
+		start := p.pos - 10
+		if start < 0 {
+			start = 0
+		}
+		end := p.pos + 10
+		if end > p.length {
+			end = p.length
+		}
+		surroundingText = p.input[start:end]
+		return nil, fmt.Errorf("expected '>' at pos %d, surrounding text: '%s', current byte: '%c'", p.pos, surroundingText, p.current())
 	}
 
 	// Parse children until the corresponding closing tag.
@@ -969,11 +997,12 @@ func (p *Parser) parseAttrValue() string {
 	if p.current() == '"' {
 		p.pos++ // skip opening "
 		start := p.pos
+		// Continue until we find a closing quote or reach the end
 		for p.pos < p.length && p.current() != '"' {
 			p.pos++
 		}
 		val := p.input[start:p.pos]
-		if p.current() == '"' {
+		if p.pos < p.length && p.current() == '"' {
 			p.pos++ // skip closing "
 		}
 		return val
@@ -981,7 +1010,7 @@ func (p *Parser) parseAttrValue() string {
 	// Allow unquoted values.
 	start := p.pos
 	for p.pos < p.length &&
-		p.current() != ' ' && p.current() != '>' {
+		p.current() != ' ' && p.current() != '>' && p.current() != '\n' && p.current() != '\r' {
 		p.pos++
 	}
 	return p.input[start:p.pos]
