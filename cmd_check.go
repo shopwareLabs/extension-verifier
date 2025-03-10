@@ -74,7 +74,7 @@ var checkCommand = &cobra.Command{
 			return err
 		}
 
-		return doCheckReport(result, reportingFormat)
+		return doCheckReport(result.RemoveByIdentifier(ext.GetExtensionConfig().Validation.Ignore), reportingFormat)
 	},
 }
 

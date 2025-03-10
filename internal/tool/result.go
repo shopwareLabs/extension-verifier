@@ -1,6 +1,9 @@
 package tool
 
-import "sync"
+import (
+	"slices"
+	"sync"
+)
 
 type Check struct {
 	Results []CheckResult `json:"results"`
@@ -27,6 +30,19 @@ func (c *Check) HasErrors() bool {
 	}
 
 	return false
+}
+
+func (c *Check) RemoveByIdentifier(identifier []string) *Check {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	for i, r := range c.Results {
+		if slices.Contains(identifier, r.Identifier) {
+			c.Results = append(c.Results[:i], c.Results[i+1:]...)
+		}
+	}
+
+	return c
 }
 
 type CheckResult struct {
