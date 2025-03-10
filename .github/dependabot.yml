@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "composer"
-    directory: "/"
+    directory: "/tools/php"
     schedule:
       interval: "weekly"
     commit-message:
@@ -12,7 +12,7 @@ updates:
           - '*'
 
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/tools/js"
     schedule:
       interval: "weekly"
     commit-message:
