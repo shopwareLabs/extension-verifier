@@ -28,13 +28,18 @@ type ToolConfig struct {
 	// Contains a list of directories that are considered as source code
 	SourceDirectories []string
 	// Contains a list of identifiers that are ignored
-	ValidationIgnores []string
+	ValidationIgnores []ToolConfigIgnore
 	// Contains a list of directories that are considered as admin code
 	AdminDirectories []string
 	// Contains a list of directories that are considered as storefront code
 	StorefrontDirectories []string
 
 	Extension extension.Extension
+}
+
+type ToolConfigIgnore struct {
+	Identifier string
+	Path       string
 }
 
 type Tool interface {

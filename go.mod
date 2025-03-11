@@ -3,7 +3,7 @@ module github.com/shopware/extension-verifier
 go 1.24.0
 
 require (
-	github.com/shopware/shopware-cli v0.0.0-20250311095753-0c01bc5b2ee5
+	github.com/shopware/shopware-cli v0.0.0-20250311130108-85845c6b89ae
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 )

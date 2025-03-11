@@ -11,9 +11,18 @@ import (
 )
 
 func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) {
+	var ignores []ToolConfigIgnore
+
+	for _, ignore := range ext.GetExtensionConfig().Validation.Ignore {
+		ignores = append(ignores, ToolConfigIgnore{
+			Identifier: ignore.Identifier,
+			Path:       ignore.Path,
+		})
+	}
+
 	cfg := &ToolConfig{
 		Extension:             ext,
-		ValidationIgnores:     ext.GetExtensionConfig().Validation.Ignore,
+		ValidationIgnores:     ignores,
 		RootDir:               ext.GetPath(),
 		SourceDirectories:     []string{ext.GetRootDir()},
 		AdminDirectories:      getAdminFolders(ext),
