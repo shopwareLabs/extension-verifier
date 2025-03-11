@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/shopware/shopware-cli/extension"
 	"github.com/shyim/go-version"
@@ -84,7 +85,14 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 	adminDirectories := []string{}
 	storefrontDirectories := []string{}
 
+	vendorPath := path.Join(root, "vendor")
+
 	for _, ext := range extensions {
+		// Skip plugins in vendor folder
+		if strings.HasPrefix(ext.GetRootDir(), vendorPath) {
+			continue
+		}
+
 		sourceDirectories = append(sourceDirectories, ext.GetRootDir())
 		adminDirectories = append(adminDirectories, getAdminFolders(ext)...)
 		storefrontDirectories = append(storefrontDirectories, getStorefrontFolders(ext)...)
