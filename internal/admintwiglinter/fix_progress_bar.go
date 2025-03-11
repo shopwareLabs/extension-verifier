@@ -2,7 +2,7 @@ package admintwiglinter
 
 import (
 	"github.com/shopware/extension-verifier/internal/html"
-	"github.com/shopware/shopware-cli/version"
+	"github.com/shyim/go-version"
 )
 
 type ProgressBarFixer struct{}

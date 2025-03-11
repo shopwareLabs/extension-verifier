@@ -66,8 +66,8 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 	}
 
 	for _, sourceDirectory := range config.SourceDirectories {
-		if !p.configExists(sourceDirectory) {
-			if err := os.WriteFile(path.Join(sourceDirectory, "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
+		if !p.configExists(config.RootDir) {
+			if err := os.WriteFile(path.Join(config.RootDir, "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
 				return err
 			}
 		}

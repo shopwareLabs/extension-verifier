@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/shopware/extension-verifier/internal/html"
-	"github.com/shopware/shopware-cli/version"
+	"github.com/shyim/go-version"
 )
 
 type EmailFieldFixer struct{}

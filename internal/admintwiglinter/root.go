@@ -2,7 +2,7 @@ package admintwiglinter
 
 import (
 	"github.com/shopware/extension-verifier/internal/html"
-	"github.com/shopware/shopware-cli/version"
+	"github.com/shyim/go-version"
 )
 
 var shopware67Constraint = version.MustConstraints(version.NewConstraint(">=6.7.0"))
