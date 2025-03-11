@@ -53,12 +53,12 @@ var checkCommand = &cobra.Command{
 				if err != nil {
 					return err
 				}
-			}
+			} else {
+				toolCfg, err = tool.GetConfigFromProject(args[0])
 
-			toolCfg, err = tool.GetConfigFromProject(args[0])
-
-			if err != nil {
-				return err
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			ext, err = extension.GetExtensionByZip(args[0])
