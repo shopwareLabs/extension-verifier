@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/shopware/shopware-cli/extension"
+	"github.com/shopware/shopware-cli/shop"
 	"github.com/shyim/go-version"
 )
 
@@ -98,11 +99,29 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 		storefrontDirectories = append(storefrontDirectories, getStorefrontFolders(ext)...)
 	}
 
+	var validationIgnores []ToolConfigIgnore
+
+	shopCfg, err := shop.ReadConfig(path.Join(root, ".shopware-project.yml"), true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if shopCfg.Validation != nil {
+		for _, ignore := range shopCfg.Validation.Ignore {
+			validationIgnores = append(validationIgnores, ToolConfigIgnore{
+				Identifier: ignore.Identifier,
+				Path:       ignore.Path,
+			})
+		}
+	}
+
 	toolCfg := &ToolConfig{
 		RootDir:               root,
 		SourceDirectories:     sourceDirectories,
 		AdminDirectories:      adminDirectories,
 		StorefrontDirectories: storefrontDirectories,
+		ValidationIgnores:     validationIgnores,
 	}
 
 	if err := determineVersionRange(toolCfg, constraint); err != nil {

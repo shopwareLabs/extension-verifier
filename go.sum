@@ -132,6 +132,8 @@ github.com/shopware/shopware-cli v0.0.0-20250311095753-0c01bc5b2ee5 h1:Eh0d4WfWF
 github.com/shopware/shopware-cli v0.0.0-20250311095753-0c01bc5b2ee5/go.mod h1:vLiEGt3tohZBps66g09aphbgCJNQl5HhTxg8Nwhtyhc=
 github.com/shopware/shopware-cli v0.0.0-20250311130108-85845c6b89ae h1:64kWPaZrXcepDt9p+lL6U3txszTQX8HT1SDc0gQodK8=
 github.com/shopware/shopware-cli v0.0.0-20250311130108-85845c6b89ae/go.mod h1:vLiEGt3tohZBps66g09aphbgCJNQl5HhTxg8Nwhtyhc=
+github.com/shopware/shopware-cli v0.0.0-20250311133812-be354a241536 h1:shdS4uO+aY9i4zbpryOzFjDlRUz5siq5K0wufLhecLk=
+github.com/shopware/shopware-cli v0.0.0-20250311133812-be354a241536/go.mod h1:vLiEGt3tohZBps66g09aphbgCJNQl5HhTxg8Nwhtyhc=
 github.com/shyim/go-htmlprinter v0.0.0-20250212091723-cc11f7bf036d h1:H4beXhaWS4edAoYRzbdszvIfL9bHt4jUbGgt5G+QdGY=
 github.com/shyim/go-htmlprinter v0.0.0-20250212091723-cc11f7bf036d/go.mod h1:7pOn8MeVA6hUnFkgkXpNFVjGtNnh2/AeZTDwXwWtNp8=
 github.com/shyim/go-version v0.0.0-20240530110323-4b7091cee42c h1:3venOxJzcKW4Xi5N9ipFNrnwAS4g1yTOTcBssDHHgQA=
