@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"sort"
 
 	"github.com/shopware/shopware-cli/extension"
@@ -13,8 +15,12 @@ import (
 
 func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) {
 	cfg := &ToolConfig{
-		Extension:         ext,
-		ValidationIgnores: ext.GetExtensionConfig().Validation.Ignore,
+		Extension:             ext,
+		ValidationIgnores:     ext.GetExtensionConfig().Validation.Ignore,
+		RootDir:               ext.GetPath(),
+		SourceDirectories:     []string{ext.GetRootDir()},
+		AdminDirectories:      getAdminFolders(ext),
+		StorefrontDirectories: getStorefrontFolders(ext),
 	}
 
 	if err := determineVersionRange(cfg); err != nil {
@@ -108,4 +114,39 @@ func getShopwareVersions() ([]string, error) {
 		versions = append(versions, v.Version)
 	}
 	return versions, nil
+}
+
+func getAdminFolders(ext extension.Extension) []string {
+	paths := []string{
+		path.Join(ext.GetResourcesDir(), "app", "administration"),
+	}
+
+	for _, bundle := range ext.GetExtensionConfig().Build.ExtraBundles {
+		paths = append(paths, path.Join(ext.GetRootDir(), bundle.Path, "Resources", "app", "administration"))
+	}
+
+	return filterNotExistingPaths(paths)
+}
+
+func getStorefrontFolders(ext extension.Extension) []string {
+	paths := []string{
+		path.Join(ext.GetResourcesDir(), "app", "storefront"),
+	}
+
+	for _, bundle := range ext.GetExtensionConfig().Build.ExtraBundles {
+		paths = append(paths, path.Join(ext.GetRootDir(), bundle.Path, "Resources", "app", "storefront"))
+	}
+
+	return filterNotExistingPaths(paths)
+}
+
+func filterNotExistingPaths(paths []string) []string {
+	filteredPaths := make([]string, 0)
+	for _, p := range paths {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			filteredPaths = append(filteredPaths, p)
+		}
+	}
+
+	return filteredPaths
 }

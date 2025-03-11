@@ -48,7 +48,7 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 		return err
 	}
 
-	paths := GetJSFolders(config)
+	paths := append(config.StorefrontDirectories, config.AdminDirectories...)
 
 	var gr errgroup.Group
 
@@ -79,7 +79,7 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 			}
 
 			for _, diagnostic := range eslintOutput {
-				fixedPath := strings.TrimPrefix(strings.TrimPrefix(diagnostic.FilePath, "/private"), config.Extension.GetPath()+"/")
+				fixedPath := strings.TrimPrefix(strings.TrimPrefix(diagnostic.FilePath, "/private"), config.RootDir+"/")
 
 				for _, message := range diagnostic.Messages {
 					severity := "warn"
@@ -112,7 +112,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 		return err
 	}
 
-	paths := GetJSFolders(config)
+	paths := append(config.StorefrontDirectories, config.AdminDirectories...)
 	env := append(os.Environ(), fmt.Sprintf("SHOPWARE_VERSION=%s", config.MinShopwareVersion))
 
 	var gr errgroup.Group

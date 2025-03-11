@@ -15,7 +15,8 @@ func (r Rector) Check(ctx context.Context, check *Check, config ToolConfig) erro
 }
 
 func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
-	if config.Extension.GetType() == "app" {
+	// Apps don't have an composer.json file, skip them
+	if _, err := os.Stat(path.Join(config.RootDir, "composer.json")); err != nil {
 		return nil
 	}
 
@@ -25,7 +26,7 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	}
 
 	// Backup composer.json
-	composerJSONPath := path.Join(config.Extension.GetPath(), "composer.json")
+	composerJSONPath := path.Join(config.RootDir, "composer.json")
 	var backupData []byte
 	if _, err := os.Stat(composerJSONPath); err == nil {
 		backupData, err = os.ReadFile(composerJSONPath)
@@ -35,8 +36,8 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	}
 
 	// Check and remove existing vendor/composer.lock
-	vendorPath := path.Join(config.Extension.GetPath(), "vendor")
-	composerLockPath := path.Join(config.Extension.GetPath(), "composer.lock")
+	vendorPath := path.Join(config.RootDir, "vendor")
+	composerLockPath := path.Join(config.RootDir, "composer.lock")
 
 	if _, err := os.Stat(vendorPath); err == nil {
 		if err := os.RemoveAll(vendorPath); err != nil {
@@ -51,15 +52,17 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 
 	rectorConfigFile := path.Join(cwd, "tools", "php", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
 
-	if err := installComposerDeps(config.Extension, "highest"); err != nil {
+	if err := installComposerDeps(config.RootDir, "highest"); err != nil {
 		return err
 	}
 
-	rector := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "rector"), "process", "--config", rectorConfigFile, "--autoload-file", path.Join("vendor", "autoload.php"), "src")
-	rector.Dir = config.Extension.GetPath()
+	for _, sourceDirectory := range config.SourceDirectories {
+		rector := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "rector"), "process", "--config", rectorConfigFile, "--autoload-file", path.Join("vendor", "autoload.php"), sourceDirectory)
+		rector.Dir = config.RootDir
 
-	log, _ := rector.CombinedOutput()
-	fmt.Println(string(log))
+		log, _ := rector.CombinedOutput()
+		fmt.Println(string(log))
+	}
 
 	// Cleanup after execution
 	if err := os.RemoveAll(vendorPath); err != nil {

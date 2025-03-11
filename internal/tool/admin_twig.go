@@ -20,7 +20,7 @@ type AdminTwigLinter struct{}
 func (a AdminTwigLinter) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	fixers := admintwiglinter.GetFixers(version.Must(version.NewVersion(config.MinShopwareVersion)))
 
-	for _, p := range GetAdminFolders(config) {
+	for _, p := range config.AdminDirectories {
 		err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -49,7 +49,7 @@ func (a AdminTwigLinter) Check(ctx context.Context, check *Check, config ToolCon
 				for _, message := range fixer.Check(parsed) {
 					check.AddResult(CheckResult{
 						Message:    message.Message,
-						Path:       strings.TrimPrefix(strings.TrimPrefix(path, "/private"), config.Extension.GetPath()+"/"),
+						Path:       strings.TrimPrefix(strings.TrimPrefix(path, "/private"), config.RootDir+"/"),
 						Line:       0,
 						Severity:   message.Severity,
 						Identifier: fmt.Sprintf("admintwiglinter/%s", message.Identifier),
@@ -71,7 +71,7 @@ func (a AdminTwigLinter) Check(ctx context.Context, check *Check, config ToolCon
 func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 	fixers := admintwiglinter.GetFixers(version.Must(version.NewVersion(config.MinShopwareVersion)))
 
-	for _, p := range GetAdminFolders(config) {
+	for _, p := range config.AdminDirectories {
 		err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -116,7 +116,7 @@ func (a AdminTwigLinter) Fix(ctx context.Context, config ToolConfig) error {
 func (a AdminTwigLinter) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
 	dmp := diffmatchpatch.New()
 
-	for _, p := range GetAdminFolders(config) {
+	for _, p := range config.AdminDirectories {
 		err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err

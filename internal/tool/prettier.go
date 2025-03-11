@@ -31,7 +31,7 @@ func (b Prettier) Format(ctx context.Context, config ToolConfig, dryRun bool) er
 		return err
 	}
 
-	rootDir := config.Extension.GetRootDir()
+	rootDir := config.RootDir
 
 	if !path.IsAbs(rootDir) {
 		rootDir = path.Join(cwd, rootDir)

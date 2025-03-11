@@ -38,7 +38,7 @@ func (s StyleLint) Check(ctx context.Context, check *Check, config ToolConfig) e
 		return err
 	}
 
-	paths := GetJSFolders(config)
+	paths := append(config.StorefrontDirectories, config.AdminDirectories...)
 	var gr errgroup.Group
 
 	for _, p := range paths {
@@ -72,7 +72,7 @@ func (s StyleLint) Check(ctx context.Context, check *Check, config ToolConfig) e
 			}
 
 			for _, diagnostic := range stylelintOutput {
-				fixedPath := strings.TrimPrefix(strings.TrimPrefix(diagnostic.Source, "/private"), config.Extension.GetPath()+"/")
+				fixedPath := strings.TrimPrefix(strings.TrimPrefix(diagnostic.Source, "/private"), config.RootDir+"/")
 
 				for _, msg := range diagnostic.Warnings {
 					check.AddResult(CheckResult{
@@ -109,7 +109,7 @@ func (s StyleLint) Fix(ctx context.Context, config ToolConfig) error {
 		return err
 	}
 
-	paths := GetJSFolders(config)
+	paths := append(config.StorefrontDirectories, config.AdminDirectories...)
 
 	var gr errgroup.Group
 

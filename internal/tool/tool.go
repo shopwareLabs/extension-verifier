@@ -2,8 +2,6 @@ package tool
 
 import (
 	"context"
-	"os"
-	"path"
 
 	"github.com/shopware/shopware-cli/extension"
 )
@@ -19,59 +17,28 @@ func GetTools() []Tool {
 }
 
 type ToolConfig struct {
+	// The minimum version of Shopware that is supported
 	MinShopwareVersion string
+	// The maximum version of Shopware that is supported
 	MaxShopwareVersion string
-	CheckAgainst       string
-	ValidationIgnores  []string
-	Extension          extension.Extension
+	// The version of Shopware that is checked against
+	CheckAgainst string
+	// The root directory of the extension/project
+	RootDir string
+	// Contains a list of directories that are considered as source code
+	SourceDirectories []string
+	// Contains a list of identifiers that are ignored
+	ValidationIgnores []string
+	// Contains a list of directories that are considered as admin code
+	AdminDirectories []string
+	// Contains a list of directories that are considered as storefront code
+	StorefrontDirectories []string
+
+	Extension extension.Extension
 }
 
 type Tool interface {
 	Check(ctx context.Context, check *Check, config ToolConfig) error
 	Fix(ctx context.Context, config ToolConfig) error
 	Format(ctx context.Context, config ToolConfig, dryRun bool) error
-}
-
-func GetAdminFolders(config ToolConfig) []string {
-	paths := []string{
-		path.Join(config.Extension.GetResourcesDir(), "app", "administration"),
-	}
-
-	for _, bundle := range config.Extension.GetExtensionConfig().Build.ExtraBundles {
-		paths = append(paths, path.Join(config.Extension.GetRootDir(), bundle.Path, "Resources", "app", "administration"))
-	}
-
-	filteredPaths := make([]string, 0)
-	for _, p := range paths {
-		if _, err := os.Stat(p); !os.IsNotExist(err) {
-			filteredPaths = append(filteredPaths, p)
-		}
-	}
-
-	paths = filteredPaths
-
-	return paths
-}
-
-func GetJSFolders(config ToolConfig) []string {
-	paths := []string{
-		path.Join(config.Extension.GetResourcesDir(), "app", "storefront"),
-		path.Join(config.Extension.GetResourcesDir(), "app", "administration"),
-	}
-
-	for _, bundle := range config.Extension.GetExtensionConfig().Build.ExtraBundles {
-		paths = append(paths, path.Join(config.Extension.GetRootDir(), bundle.Path, "Resources", "app", "storefront"))
-		paths = append(paths, path.Join(config.Extension.GetRootDir(), bundle.Path, "Resources", "app", "administration"))
-	}
-
-	filteredPaths := make([]string, 0)
-	for _, p := range paths {
-		if _, err := os.Stat(p); !os.IsNotExist(err) {
-			filteredPaths = append(filteredPaths, p)
-		}
-	}
-
-	paths = filteredPaths
-
-	return paths
 }

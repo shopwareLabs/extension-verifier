@@ -9,6 +9,10 @@ import (
 type SWCLI struct{}
 
 func (s SWCLI) Check(ctx context.Context, check *Check, config ToolConfig) error {
+	if config.Extension == nil {
+		return nil
+	}
+
 	validationContext := extension.ValidationContext{Extension: config.Extension}
 
 	config.Extension.Validate(ctx, &validationContext)

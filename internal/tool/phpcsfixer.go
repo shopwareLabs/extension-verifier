@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type PHPCSFixer struct{}
@@ -18,7 +20,8 @@ func (p PHPCSFixer) Fix(ctx context.Context, config ToolConfig) error {
 }
 
 func (p PHPCSFixer) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
-	if config.Extension.GetType() == "app" {
+	// Apps don't have an composer.json file, skip them
+	if _, err := os.Stat(path.Join(config.RootDir, "composer.json")); err != nil {
 		return nil
 	}
 
@@ -28,22 +31,31 @@ func (p PHPCSFixer) Format(ctx context.Context, config ToolConfig, dryRun bool) 
 		return err
 	}
 
-	rootDir := config.Extension.GetRootDir()
+	var gr errgroup.Group
 
-	if !path.IsAbs(rootDir) {
-		rootDir = path.Join(cwd, rootDir)
+	for _, sourceDirectory := range config.SourceDirectories {
+		fixDir := sourceDirectory
+
+		if !path.IsAbs(fixDir) {
+			fixDir = path.Join(cwd, fixDir)
+		}
+
+		args := []string{"fix", "--config", path.Join(cwd, "tools", "php", ".php-cs-fixer.dist.php"), fixDir}
+		if dryRun {
+			args = append(args, "--dry-run")
+		}
+
+		cmd := exec.CommandContext(ctx, path.Join(cwd, "tools", "php", "vendor", "bin", "php-cs-fixer"), args...)
+		cmd.Dir = config.RootDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		gr.Go(func() error {
+			return cmd.Run()
+		})
 	}
 
-	args := []string{"fix", "--config", path.Join(cwd, "tools", "php", ".php-cs-fixer.dist.php"), rootDir}
-	if dryRun {
-		args = append(args, "--dry-run")
-	}
-	cmd := exec.CommandContext(ctx, path.Join(cwd, "tools", "php", "vendor", "bin", "php-cs-fixer"), args...)
-	cmd.Dir = config.Extension.GetPath()
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	return cmd.Run()
+	return gr.Wait()
 }
 
 func init() {
