@@ -44,6 +44,10 @@ func (s StyleLint) Check(ctx context.Context, check *Check, config ToolConfig) e
 	for _, p := range paths {
 		p := p
 
+		if !path.IsAbs(p) {
+			p = path.Join(cwd, p)
+		}
+
 		hasSCSS, err := hasSCSSFiles(p)
 		if err != nil {
 			return err
@@ -115,6 +119,10 @@ func (s StyleLint) Fix(ctx context.Context, config ToolConfig) error {
 
 	for _, p := range paths {
 		p := p
+
+		if !path.IsAbs(p) {
+			p = path.Join(cwd, p)
+		}
 
 		hasSCSS, err := hasSCSSFiles(p)
 		if err != nil {

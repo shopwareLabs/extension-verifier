@@ -56,6 +56,11 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 
 	for _, p := range paths {
 		p := p
+
+		if !path.IsAbs(p) {
+			p = path.Join(cwd, p)
+		}
+
 		gr.Go(func() error {
 			eslint := exec.CommandContext(ctx,
 				"node",
@@ -119,6 +124,11 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 
 	for _, p := range paths {
 		p := p
+
+		if !path.IsAbs(p) {
+			p = path.Join(cwd, p)
+		}
+
 		gr.Go(func() error {
 			eslint := exec.CommandContext(ctx,
 				"node",

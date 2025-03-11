@@ -57,6 +57,10 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	}
 
 	for _, sourceDirectory := range config.SourceDirectories {
+		if !path.IsAbs(sourceDirectory) {
+			sourceDirectory = path.Join(cwd, sourceDirectory)
+		}
+
 		rector := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "rector"), "process", "--config", rectorConfigFile, "--autoload-file", path.Join("vendor", "autoload.php"), sourceDirectory)
 		rector.Dir = config.RootDir
 

@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path"
+
+	"golang.org/x/sync/errgroup"
 )
 
 var ignoredPaths = `
@@ -31,37 +33,45 @@ func (b Prettier) Format(ctx context.Context, config ToolConfig, dryRun bool) er
 		return err
 	}
 
-	rootDir := config.RootDir
+	var gr errgroup.Group
 
-	if !path.IsAbs(rootDir) {
-		rootDir = path.Join(cwd, rootDir)
+	for _, sourceDirectory := range config.SourceDirectories {
+		sourceDirectory := sourceDirectory
+
+		if !path.IsAbs(sourceDirectory) {
+			sourceDirectory = path.Join(cwd, sourceDirectory)
+		}
+
+		if err := os.WriteFile(path.Join(sourceDirectory, ".prettierignore"), []byte(ignoredPaths), 0644); err != nil {
+			return err
+		}
+
+		args := []string{
+			path.Join(cwd, "tools", "js", "node_modules", ".bin", "prettier"),
+			"--config",
+			path.Join(cwd, "tools", "js", ".prettierrc.js"),
+			".",
+		}
+
+		if !dryRun {
+			args = append(args, "--write")
+		}
+
+		gr.Go(func() error {
+			cmd := exec.CommandContext(ctx, "node", args...)
+			cmd.Dir = sourceDirectory
+			cmd.Stderr = os.Stderr
+			cmd.Stdout = os.Stdout
+
+			if err := cmd.Run(); err != nil {
+				return err
+			}
+
+			return os.Remove(path.Join(sourceDirectory, ".prettierignore"))
+		})
 	}
 
-	if err := os.WriteFile(path.Join(rootDir, ".prettierignore"), []byte(ignoredPaths), 0644); err != nil {
-		return err
-	}
-
-	args := []string{
-		path.Join(cwd, "tools", "js", "node_modules", ".bin", "prettier"),
-		"--config",
-		path.Join(cwd, "tools", "js", ".prettierrc.js"),
-		".",
-	}
-
-	if !dryRun {
-		args = append(args, "--write")
-	}
-
-	cmd := exec.CommandContext(ctx, "node", args...)
-	cmd.Dir = rootDir
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return os.Remove(path.Join(rootDir, ".prettierignore"))
+	return gr.Wait()
 }
 
 func init() {
