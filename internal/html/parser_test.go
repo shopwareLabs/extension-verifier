@@ -77,6 +77,14 @@ func TestFormatting(t *testing.T) {
 			}
 
 			assert.Equal(t, stringParts[1], parsed.Dump(0))
+
+			parsed, err = NewParser(parsed.Dump(0))
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, stringParts[1], parsed.Dump(0))
 		})
 	}
 

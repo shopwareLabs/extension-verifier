@@ -694,7 +694,7 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 		if p.peek(4) == "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
-				if text != "" {
+				if strings.TrimSpace(text) != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
 						Line: p.getLineAt(rawStart),
@@ -725,7 +725,7 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 		if p.current() == '<' && p.peek(2) != "<!--" {
 			if p.pos > rawStart {
 				text := p.input[rawStart:p.pos]
-				if text != "" {
+				if strings.TrimSpace(text) != "" {
 					nodes = append(nodes, &RawNode{
 						Text: text,
 						Line: p.getLineAt(rawStart),
@@ -745,7 +745,7 @@ func (p *Parser) parseNodes(stopTag string) (NodeList, error) {
 
 	if rawStart < p.pos {
 		text := p.input[rawStart:p.pos]
-		if text != "" {
+		if strings.TrimSpace(text) != "" {
 			nodes = append(nodes, &RawNode{
 				Text: text,
 				Line: p.getLineAt(rawStart),
