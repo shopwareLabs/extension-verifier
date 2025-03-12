@@ -4,33 +4,12 @@ go 1.24.0
 
 require (
 	github.com/shopware/shopware-cli v0.0.0-20250311133812-be354a241536
+	github.com/shyim/go-version v0.0.0-20240530110323-4b7091cee42c
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 )
 
-require (
-	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/NYTimes/gziphandler v1.1.1 // indirect
-	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/caarlos0/env/v9 v9.0.0 // indirect
-	github.com/chzyer/readline v1.5.1 // indirect
-	github.com/go-sql-driver/mysql v1.9.0 // indirect
-	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/gorilla/css v1.0.1 // indirect
-	github.com/gorilla/schema v1.4.1 // indirect
-	github.com/jaswdr/faker v1.19.1 // indirect
-	github.com/manifoldco/promptui v0.9.0 // indirect
-	github.com/mattn/go-runewidth v0.0.16 // indirect
-	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/otiai10/copy v1.14.1 // indirect
-	github.com/otiai10/mint v1.6.3 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/shyim/go-htmlprinter v0.0.0-20250212091723-cc11f7bf036d // indirect
-	github.com/shyim/go-version v0.0.0-20240530110323-4b7091cee42c // indirect
-	github.com/vulcand/oxy/v2 v2.0.2 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-)
+require go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 
 require (
 	cloud.google.com/go v0.118.2 // indirect
