@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/shopware/shopware-cli/extension"
@@ -88,9 +89,29 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 
 	vendorPath := path.Join(root, "vendor")
 
+	shopCfg, err := shop.ReadConfig(path.Join(root, ".shopware-project.yml"), true)
+
+	if err != nil {
+		return nil, err
+	}
+
+	excludeExtensions := []string{}
+
+	if shopCfg.Validation != nil {
+		for _, ignore := range shopCfg.Validation.IgnoreExtensions {
+			excludeExtensions = append(excludeExtensions, ignore.Name)
+		}
+	}
+
 	for _, ext := range extensions {
+		extName, err := ext.GetName()
+
+		if err != nil {
+			return nil, err
+		}
+
 		// Skip plugins in vendor folder
-		if strings.HasPrefix(ext.GetRootDir(), vendorPath) {
+		if strings.HasPrefix(ext.GetRootDir(), vendorPath) || slices.Contains(excludeExtensions, extName) {
 			continue
 		}
 
@@ -100,12 +121,6 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 	}
 
 	var validationIgnores []ToolConfigIgnore
-
-	shopCfg, err := shop.ReadConfig(path.Join(root, ".shopware-project.yml"), true)
-
-	if err != nil {
-		return nil, err
-	}
 
 	if shopCfg.Validation != nil {
 		for _, ignore := range shopCfg.Validation.Ignore {
