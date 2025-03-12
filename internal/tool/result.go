@@ -1,7 +1,6 @@
 package tool
 
 import (
-	"slices"
 	"sync"
 )
 
@@ -32,15 +31,24 @@ func (c *Check) HasErrors() bool {
 	return false
 }
 
-func (c *Check) RemoveByIdentifier(identifier []string) *Check {
+func (c *Check) RemoveByIdentifier(ignores []ToolConfigIgnore) *Check {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	for i, r := range c.Results {
-		if slices.Contains(identifier, r.Identifier) {
-			c.Results = append(c.Results[:i], c.Results[i+1:]...)
+	var filtered []CheckResult
+	for _, r := range c.Results {
+		shouldKeep := true
+		for _, ignore := range ignores {
+			if r.Identifier == ignore.Identifier && (r.Path == ignore.Path || ignore.Path == "") {
+				shouldKeep = false
+				break
+			}
+		}
+		if shouldKeep {
+			filtered = append(filtered, r)
 		}
 	}
+	c.Results = filtered
 
 	return c
 }

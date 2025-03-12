@@ -34,25 +34,44 @@ var checkCommand = &cobra.Command{
 		}
 
 		var ext extension.Extension
+		var toolCfg *tool.ToolConfig
 
 		if stat.IsDir() {
-			if err := copyFiles(args[0], tmpDir); err != nil {
+			if !tool.IsProject(args[0]) {
+				if err := copyFiles(args[0], tmpDir); err != nil {
+					return err
+				}
+
+				ext, err = extension.GetExtensionByFolder(tmpDir)
+
+				if err != nil {
+					return err
+				}
+
+				toolCfg, err = tool.ConvertExtensionToToolConfig(ext)
+
+				if err != nil {
+					return err
+				}
+			} else {
+				toolCfg, err = tool.GetConfigFromProject(args[0])
+
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			ext, err = extension.GetExtensionByZip(args[0])
+
+			if err != nil {
 				return err
 			}
 
-			ext, err = extension.GetExtensionByFolder(tmpDir)
-		} else {
-			ext, err = extension.GetExtensionByZip(args[0])
-		}
+			toolCfg, err = tool.ConvertExtensionToToolConfig(ext)
 
-		if err != nil {
-			return err
-		}
-
-		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
-
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
 
 		toolCfg.CheckAgainst = checkAgainst

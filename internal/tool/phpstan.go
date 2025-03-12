@@ -50,7 +50,8 @@ func (p PhpStan) configExists(pluginPath string) bool {
 }
 
 func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) error {
-	if config.Extension.GetType() == "app" {
+	// Apps don't have an composer.json file, skip them
+	if _, err := os.Stat(path.Join(config.RootDir, "composer.json")); err != nil {
 		return nil
 	}
 
@@ -60,52 +61,54 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 		return err
 	}
 
-	if err := installComposerDeps(config.Extension, config.CheckAgainst); err != nil {
+	if err := installComposerDeps(config.RootDir, config.CheckAgainst); err != nil {
 		return err
 	}
 
-	if !p.configExists(config.Extension.GetPath()) {
-		if err := os.WriteFile(path.Join(config.Extension.GetPath(), "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
-			return err
+	for _, sourceDirectory := range config.SourceDirectories {
+		if !p.configExists(config.RootDir) {
+			if err := os.WriteFile(path.Join(config.RootDir, "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
+				return err
+			}
 		}
-	}
 
-	phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json")
-	phpstan.Dir = config.Extension.GetPath()
+		phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json", sourceDirectory)
+		phpstan.Dir = config.RootDir
 
-	var stderr bytes.Buffer
-	phpstan.Stderr = &stderr
+		var stderr bytes.Buffer
+		phpstan.Stderr = &stderr
 
-	log, _ := phpstan.Output()
+		log, _ := phpstan.Output()
 
-	log = []byte(strings.ReplaceAll(string(log), "\"files\":[]", "\"files\":{}"))
+		log = []byte(strings.ReplaceAll(string(log), "\"files\":[]", "\"files\":{}"))
 
-	var phpstanResult PhpStanOutput
+		var phpstanResult PhpStanOutput
 
-	if err := json.Unmarshal(log, &phpstanResult); err != nil {
-		fmt.Println(stderr.String())
-		return fmt.Errorf("failed to unmarshal phpstan output: %w", err)
-	}
+		if err := json.Unmarshal(log, &phpstanResult); err != nil {
+			fmt.Println(stderr.String())
+			return fmt.Errorf("failed to unmarshal phpstan output: %w", err)
+		}
 
-	for _, error := range phpstanResult.Errors {
-		check.AddResult(CheckResult{
-			Path:       "phpstan.neon",
-			Message:    error,
-			Severity:   "error",
-			Line:       0,
-			Identifier: "phpstan/error",
-		})
-	}
-
-	for fileName, file := range phpstanResult.Files {
-		for _, message := range file.Messages {
+		for _, error := range phpstanResult.Errors {
 			check.AddResult(CheckResult{
-				Path:       strings.TrimPrefix(strings.TrimPrefix(fileName, "/private"), config.Extension.GetPath()+"/"),
-				Line:       message.Line,
-				Message:    message.Message,
+				Path:       "phpstan.neon",
+				Message:    error,
 				Severity:   "error",
-				Identifier: fmt.Sprintf("phpstan/%s", message.Identifier),
+				Line:       0,
+				Identifier: "phpstan/error",
 			})
+		}
+
+		for fileName, file := range phpstanResult.Files {
+			for _, message := range file.Messages {
+				check.AddResult(CheckResult{
+					Path:       strings.TrimPrefix(strings.TrimPrefix(fileName, "/private"), config.RootDir+"/"),
+					Line:       message.Line,
+					Message:    message.Message,
+					Severity:   "error",
+					Identifier: fmt.Sprintf("phpstan/%s", message.Identifier),
+				})
+			}
 		}
 	}
 

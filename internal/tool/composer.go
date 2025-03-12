@@ -1,17 +1,15 @@
 package tool
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path"
-
-	"github.com/shopware/shopware-cli/extension"
 )
 
-func installComposerDeps(ext extension.Extension, checkAgainst string) error {
-	rootDir := ext.GetPath()
-	suggets := getComposerSuggets(ext)
+func installComposerDeps(rootDir string, checkAgainst string) error {
+	suggets := getComposerSuggets(rootDir)
 
 	if _, err := os.Stat(path.Join(rootDir, "vendor")); os.IsNotExist(err) {
 		if len(suggets) > 0 {
@@ -51,22 +49,25 @@ func installComposerDeps(ext extension.Extension, checkAgainst string) error {
 	return nil
 }
 
-func getComposerSuggets(ext extension.Extension) []string {
-	if inner, ok := ext.(*extension.PlatformPlugin); ok {
-		suggests := make([]string, 0, len(inner.Composer.Suggest))
-		for k := range inner.Composer.Suggest {
-			suggests = append(suggests, k)
-		}
-		return suggests
+func getComposerSuggets(rootDir string) []string {
+	composerJSON, err := os.ReadFile(path.Join(rootDir, "composer.json"))
+	if err != nil {
+		return []string{}
 	}
 
-	if inner, ok := ext.(*extension.ShopwareBundle); ok {
-		suggests := make([]string, 0, len(inner.Composer.Suggest))
-		for k := range inner.Composer.Suggest {
-			suggests = append(suggests, k)
-		}
-		return suggests
+	var composerJSONData map[string]interface{}
+	if err := json.Unmarshal(composerJSON, &composerJSONData); err != nil {
+		return []string{}
 	}
 
-	return []string{}
+	if composerJSONData["suggest"] == nil {
+		return []string{}
+	}
+
+	suggests := make([]string, 0, len(composerJSONData["suggest"].(map[string]interface{})))
+	for k := range composerJSONData["suggest"].(map[string]interface{}) {
+		suggests = append(suggests, k)
+	}
+
+	return suggests
 }

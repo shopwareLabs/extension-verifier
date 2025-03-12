@@ -35,122 +35,126 @@ func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
 		return err
 	}
 
-	twigFolder := path.Join(config.Extension.GetResourcesDir(), "views", "storefront")
+	for _, sourceDirectory := range config.SourceDirectories {
+		twigFolder := path.Join(sourceDirectory, "Resources", "views", "storefront")
 
-	if _, err := os.Stat(twigFolder); os.IsNotExist(err) {
-		return nil
-	}
-
-	oldVersion, err := cloneShopwareStorefront(config.MinShopwareVersion)
-
-	if err != nil {
-		return err
-	}
-
-	newVersion, err := cloneShopwareStorefront(config.MaxShopwareVersion)
-
-	if err != nil {
-		return err
-	}
-
-	defer os.RemoveAll(oldVersion)
-	defer os.RemoveAll(newVersion)
-
-	return filepath.Walk(twigFolder, func(file string, info os.FileInfo, _ error) error {
-		if info.IsDir() {
+		if _, err := os.Stat(twigFolder); os.IsNotExist(err) {
 			return nil
 		}
 
-		if filepath.Ext(file) != ".twig" {
-			return nil
-		}
-
-		content, err := os.ReadFile(file)
+		oldVersion, err := cloneShopwareStorefront(config.MinShopwareVersion)
 
 		if err != nil {
 			return err
 		}
 
-		ast, err := twig.ParseTemplate(string(content))
+		newVersion, err := cloneShopwareStorefront(config.MaxShopwareVersion)
 
 		if err != nil {
 			return err
 		}
 
-		extends := ast.Extends()
+		defer os.RemoveAll(oldVersion)
+		defer os.RemoveAll(newVersion)
 
-		if extends == nil {
-			return nil
-		}
+		filepath.Walk(twigFolder, func(file string, info os.FileInfo, _ error) error {
+			if info.IsDir() {
+				return nil
+			}
 
-		tpl := extends.Template
+			if filepath.Ext(file) != ".twig" {
+				return nil
+			}
 
-		if tpl[0] == '@' {
-			tplParts := strings.Split(tpl, "/")
-			tplParts = tplParts[1:]
-			tpl = strings.Join(tplParts, "/")
-		}
+			content, err := os.ReadFile(file)
 
-		oldTemplateText, err := os.ReadFile(path.Join(oldVersion, "Resources", "views", tpl))
+			if err != nil {
+				return err
+			}
 
-		if err != nil {
-			fmt.Printf("Template %s not found in old version\n", tpl)
-			return nil
-		}
+			ast, err := twig.ParseTemplate(string(content))
 
-		newTemplateText, err := os.ReadFile(path.Join(newVersion, "Resources", "views", tpl))
+			if err != nil {
+				return err
+			}
 
-		if err != nil {
-			fmt.Printf("Template %s not found in new version\n", tpl)
-			return nil
-		}
+			extends := ast.Extends()
 
-		var str strings.Builder
-		str.WriteString("You are a helper agent to help to upgrade Twig templates. I will give you the old and new template happend in the Software and as third the extended template. Apply the changes happen between old and new template to the extended template.\n")
-		str.WriteString("Follow following rules while making adjustments to the extended template:\n")
-		str.WriteString("- Do only the necessary changes to the extended template.\n")
-		str.WriteString("- Do only modify the content inside the block and dont add new blocks\n")
-		str.WriteString("- Please also only output the modified extended template nothing more.\n")
-		str.WriteString("- Adjust also HTML elements to be more accessibility friendly.\n")
-		str.WriteString("- If in a {% block %} is {{ parent() }}, ignore it and dont modify the content of the block\n")
-		str.WriteString("\n")
-		str.WriteString("This was the old template:\n")
-		str.WriteString("```twig\n")
-		str.WriteString(string(oldTemplateText))
-		str.WriteString("\n```\n")
-		str.WriteString("and this is the new one:\n")
-		str.WriteString("```twig\n")
-		str.WriteString(string(newTemplateText))
-		str.WriteString("\n```\n")
-		str.WriteString("and this is my template:\n")
-		str.WriteString("```twig\n")
-		str.WriteString(string(content))
-		str.WriteString("\n```")
+			if extends == nil {
+				return nil
+			}
 
-		resp, err := generateContent(ctx, client, str.String())
+			tpl := extends.Template
 
-		if err != nil {
-			return err
-		}
+			if tpl[0] == '@' {
+				tplParts := strings.Split(tpl, "/")
+				tplParts = tplParts[1:]
+				tpl = strings.Join(tplParts, "/")
+			}
 
-		text := string(resp.Candidates[0].Content.Parts[0].(genai.Text))
+			oldTemplateText, err := os.ReadFile(path.Join(oldVersion, "Resources", "views", tpl))
 
-		start := strings.Index(text, "```twig")
-		end := strings.LastIndex(text, "```")
+			if err != nil {
+				fmt.Printf("Template %s not found in old version\n", tpl)
+				return nil
+			}
 
-		if start == -1 || end == -1 {
-			return nil
-		}
+			newTemplateText, err := os.ReadFile(path.Join(newVersion, "Resources", "views", tpl))
 
-		text = strings.TrimPrefix(text[start+7:end], "\n")
+			if err != nil {
+				fmt.Printf("Template %s not found in new version\n", tpl)
+				return nil
+			}
 
-		contentStr := string(content)
-		if strings.TrimSpace(text) == strings.TrimSpace(contentStr) {
-			return nil
-		}
+			var str strings.Builder
+			str.WriteString("You are a helper agent to help to upgrade Twig templates. I will give you the old and new template happend in the Software and as third the extended template. Apply the changes happen between old and new template to the extended template.\n")
+			str.WriteString("Follow following rules while making adjustments to the extended template:\n")
+			str.WriteString("- Do only the necessary changes to the extended template.\n")
+			str.WriteString("- Do only modify the content inside the block and dont add new blocks\n")
+			str.WriteString("- Please also only output the modified extended template nothing more.\n")
+			str.WriteString("- Adjust also HTML elements to be more accessibility friendly.\n")
+			str.WriteString("- If in a {% block %} is {{ parent() }}, ignore it and dont modify the content of the block\n")
+			str.WriteString("\n")
+			str.WriteString("This was the old template:\n")
+			str.WriteString("```twig\n")
+			str.WriteString(string(oldTemplateText))
+			str.WriteString("\n```\n")
+			str.WriteString("and this is the new one:\n")
+			str.WriteString("```twig\n")
+			str.WriteString(string(newTemplateText))
+			str.WriteString("\n```\n")
+			str.WriteString("and this is my template:\n")
+			str.WriteString("```twig\n")
+			str.WriteString(string(content))
+			str.WriteString("\n```")
 
-		return os.WriteFile(file, []byte(text), os.ModePerm)
-	})
+			resp, err := generateContent(ctx, client, str.String())
+
+			if err != nil {
+				return err
+			}
+
+			text := string(resp.Candidates[0].Content.Parts[0].(genai.Text))
+
+			start := strings.Index(text, "```twig")
+			end := strings.LastIndex(text, "```")
+
+			if start == -1 || end == -1 {
+				return nil
+			}
+
+			text = strings.TrimPrefix(text[start+7:end], "\n")
+
+			contentStr := string(content)
+			if strings.TrimSpace(text) == strings.TrimSpace(contentStr) {
+				return nil
+			}
+
+			return os.WriteFile(file, []byte(text), os.ModePerm)
+		})
+	}
+
+	return nil
 }
 
 func (t Twig) Format(ctx context.Context, config ToolConfig, dryRun bool) error {

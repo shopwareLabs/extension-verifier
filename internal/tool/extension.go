@@ -2,36 +2,48 @@ package tool
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"os"
+	"path"
 	"sort"
 
 	"github.com/shopware/shopware-cli/extension"
-	"github.com/shopware/shopware-cli/version"
+	"github.com/shyim/go-version"
 )
 
 func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) {
-	cfg := &ToolConfig{
-		Extension:         ext,
-		ValidationIgnores: ext.GetExtensionConfig().Validation.Ignore,
+	var ignores []ToolConfigIgnore
+
+	for _, ignore := range ext.GetExtensionConfig().Validation.Ignore {
+		ignores = append(ignores, ToolConfigIgnore{
+			Identifier: ignore.Identifier,
+			Path:       ignore.Path,
+		})
 	}
 
-	if err := determineVersionRange(cfg); err != nil {
+	cfg := &ToolConfig{
+		Extension:             ext,
+		ValidationIgnores:     ignores,
+		RootDir:               ext.GetPath(),
+		SourceDirectories:     []string{ext.GetRootDir()},
+		AdminDirectories:      getAdminFolders(ext),
+		StorefrontDirectories: getStorefrontFolders(ext),
+	}
+
+	constraint, err := ext.GetShopwareVersionConstraint()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := determineVersionRange(cfg, constraint); err != nil {
 		return nil, err
 	}
 
 	return cfg, nil
 }
 
-func determineVersionRange(cfg *ToolConfig) error {
-	constraint, err := cfg.Extension.GetShopwareVersionConstraint()
-
-	if err != nil {
-		return err
-	}
-
-	versions, err := getShopwareVersions()
+func determineVersionRange(cfg *ToolConfig, versionConstraint *version.Constraints) error {
+	versions, err := extension.GetShopwareVersions(context.Background())
 
 	if err != nil {
 		return err
@@ -53,7 +65,7 @@ func determineVersionRange(cfg *ToolConfig) error {
 	matchingVersions := make([]*version.Version, 0)
 
 	for _, v := range vs {
-		if constraint.Check(v) {
+		if versionConstraint.Check(v) {
 			matchingVersions = append(matchingVersions, v)
 		}
 	}
@@ -68,44 +80,37 @@ func determineVersionRange(cfg *ToolConfig) error {
 	return nil
 }
 
-type packagistResponse struct {
-	Packages struct {
-		Core []struct {
-			Version string `json:"version_normalized"`
-		} `json:"shopware/core"`
-	} `json:"packages"`
+func getAdminFolders(ext extension.Extension) []string {
+	paths := []string{
+		path.Join(ext.GetResourcesDir(), "app", "administration"),
+	}
+
+	for _, bundle := range ext.GetExtensionConfig().Build.ExtraBundles {
+		paths = append(paths, path.Join(ext.GetRootDir(), bundle.Path, "Resources", "app", "administration"))
+	}
+
+	return filterNotExistingPaths(paths)
 }
 
-func getShopwareVersions() ([]string, error) {
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "https://repo.packagist.org/p2/shopware/core.json", http.NoBody)
-	if err != nil {
-		return nil, fmt.Errorf("create composer version request: %w", err)
+func getStorefrontFolders(ext extension.Extension) []string {
+	paths := []string{
+		path.Join(ext.GetResourcesDir(), "app", "storefront"),
 	}
 
-	req.Header.Set("User-Agent", "Shopware Extension Verifier")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("fetch composer versions: %w", err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("fetch composer versions: %s", resp.Status)
+	for _, bundle := range ext.GetExtensionConfig().Build.ExtraBundles {
+		paths = append(paths, path.Join(ext.GetRootDir(), bundle.Path, "Resources", "app", "storefront"))
 	}
 
-	var pckResponse packagistResponse
+	return filterNotExistingPaths(paths)
+}
 
-	var versions []string
-
-	if err := json.NewDecoder(resp.Body).Decode(&pckResponse); err != nil {
-		return nil, fmt.Errorf("decode composer versions: %w", err)
+func filterNotExistingPaths(paths []string) []string {
+	filteredPaths := make([]string, 0)
+	for _, p := range paths {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			filteredPaths = append(filteredPaths, p)
+		}
 	}
 
-	for _, v := range pckResponse.Packages.Core {
-		versions = append(versions, v.Version)
-	}
-	return versions, nil
+	return filteredPaths
 }
