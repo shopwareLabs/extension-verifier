@@ -68,7 +68,7 @@ func (nodeList NodeList) Dump(indent int) string {
 	for i, node := range nodeList {
 		if _, ok := node.(*CommentNode); ok {
 			builder.WriteString(node.Dump(indent))
-			builder.WriteString("\n\n")
+			builder.WriteString("\n")
 			continue
 		}
 		if i > 0 {
@@ -364,9 +364,16 @@ func (t *TwigBlockNode) Dump(indent int) string {
 			} else {
 				builder.WriteString(child.Dump(indent + 1))
 			}
+
+			_, isComment := child.(*CommentNode)
+
 			if i < len(nonEmptyChildren)-1 {
 				// Add an extra newline between elements
-				builder.WriteString("\n\n")
+				if isComment {
+					builder.WriteString("\n")
+				} else {
+					builder.WriteString("\n\n")
+				}
 			}
 		}
 		builder.WriteString("\n")

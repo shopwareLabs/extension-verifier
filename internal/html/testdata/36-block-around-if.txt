@@ -20,12 +20,10 @@
 {% endblock %}
 -----
 <!-- eslint-disable-next-line sw-deprecation-rules/no-twigjs-blocks -->
-
 {% block sw_cms_element_product_slider_config_settings_min_width %}
     {% parent() %}
 
     <!-- eslint-disable-next-line sw-deprecation-rules/no-twigjs-blocks -->
-
     {% block sw_cms_element_product_slider_config_settings_slides_mobile %}
         <sw-number-field
             {% if VUE3 %}

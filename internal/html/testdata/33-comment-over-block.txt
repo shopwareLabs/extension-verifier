@@ -5,5 +5,4 @@
 {% block sw_import_export_tabs_profiles %}{% endblock %}
 -----
 <!-- eslint-disable-next-line sw-deprecation-rules/no-twigjs-blocks -->
-
 {% block sw_import_export_tabs_profiles %}{% endblock %}
