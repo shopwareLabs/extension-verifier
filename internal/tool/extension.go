@@ -17,6 +17,7 @@ func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) 
 		ignores = append(ignores, ToolConfigIgnore{
 			Identifier: ignore.Identifier,
 			Path:       ignore.Path,
+			Message:    ignore.Message,
 		})
 	}
 

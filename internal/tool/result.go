@@ -1,6 +1,7 @@
 package tool
 
 import (
+	"strings"
 	"sync"
 )
 
@@ -35,11 +36,16 @@ func (c *Check) RemoveByIdentifier(ignores []ToolConfigIgnore) *Check {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	var filtered []CheckResult
+	filtered := make([]CheckResult, 0)
 	for _, r := range c.Results {
 		shouldKeep := true
 		for _, ignore := range ignores {
-			if r.Identifier == ignore.Identifier && (r.Path == ignore.Path || ignore.Path == "") {
+			if ignore.Identifier != "" && r.Identifier == ignore.Identifier && (r.Path == ignore.Path || ignore.Path == "") {
+				shouldKeep = false
+				break
+			}
+
+			if ignore.Message != "" && strings.Contains(r.Message, ignore.Message) && (r.Path == ignore.Path || ignore.Path == "") {
 				shouldKeep = false
 				break
 			}

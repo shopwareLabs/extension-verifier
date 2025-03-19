@@ -127,6 +127,7 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 			validationIgnores = append(validationIgnores, ToolConfigIgnore{
 				Identifier: ignore.Identifier,
 				Path:       ignore.Path,
+				Message:    ignore.Message,
 			})
 		}
 	}

@@ -40,6 +40,7 @@ type ToolConfig struct {
 type ToolConfigIgnore struct {
 	Identifier string
 	Path       string
+	Message    string
 }
 
 type Tool interface {
