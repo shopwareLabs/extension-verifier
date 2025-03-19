@@ -32,6 +32,10 @@ func doCheckReport(result *tool.Check, reportingFormat string) error {
 		return doJUnitReport(result)
 	}
 
+	if result.HasErrors() {
+		os.Exit(1)
+	}
+
 	return nil
 }
 
