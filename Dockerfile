@@ -43,9 +43,7 @@ apk add --no-cache \
     npm install --location=global @biomejs/biome
 EOF
 
-FROM base AS phpstan
-
-FROM base AS php
+FROM --platform=$BUILDPLATFORM base AS php
 COPY tools/php /php
 WORKDIR /php
 RUN composer install
@@ -55,7 +53,7 @@ COPY tools/js /js
 WORKDIR /js
 RUN npm install
 
-FROM golang:alpine AS executor
+FROM --platform=$BUILDPLATFORM golang:alpine AS executor
 
 COPY go.* /app/
 COPY *.go /app/
@@ -63,7 +61,8 @@ COPY internal /app/internal
 
 WORKDIR /app
 RUN go mod download
-RUN CGO_ENABLED=0 go build -o /app/executor -ldflags "-s -w" .
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -o /app/executor -ldflags "-s -w" .
 
 FROM base AS final
 WORKDIR /opt/
