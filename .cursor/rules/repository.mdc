@@ -1,7 +1,7 @@
 ---
-description: Commit Rules, Pull Request Description, Github Repository
+description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 The repository name is extension-verifier and it's in the shopwareLabs organization.
 
