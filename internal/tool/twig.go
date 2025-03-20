@@ -57,7 +57,7 @@ func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
 		defer os.RemoveAll(oldVersion)
 		defer os.RemoveAll(newVersion)
 
-		filepath.Walk(twigFolder, func(file string, info os.FileInfo, _ error) error {
+		_ = filepath.Walk(twigFolder, func(file string, info os.FileInfo, _ error) error {
 			if info.IsDir() {
 				return nil
 			}
