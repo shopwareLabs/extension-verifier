@@ -50,7 +50,13 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 		}
 	}
 
-	rectorConfigFile := path.Join(cwd, "tools", "php", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
+	var rectorConfigFile string
+
+	if _, err := os.Stat(path.Join(config.RootDir, "rector.php")); err == nil {
+		rectorConfigFile = path.Join(config.RootDir, "rector.php")
+	} else {
+		rectorConfigFile = path.Join(cwd, "tools", "php", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
+	}
 
 	if err := installComposerDeps(config.RootDir, "highest"); err != nil {
 		return err
