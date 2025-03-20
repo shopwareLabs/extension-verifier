@@ -70,10 +70,10 @@ func TestHasErrors(t *testing.T) {
 
 func TestRemoveByIdentifier(t *testing.T) {
 	tests := []struct {
-		name           string
-		initialResults []CheckResult
-		ignores        []ToolConfigIgnore
-		expectedCount  int
+		name            string
+		initialResults  []CheckResult
+		ignores         []ToolConfigIgnore
+		expectedResults []CheckResult
 	}{
 		{
 			name: "remove single result",
@@ -84,7 +84,9 @@ func TestRemoveByIdentifier(t *testing.T) {
 			ignores: []ToolConfigIgnore{
 				{Path: "file1.go", Identifier: "TEST001"},
 			},
-			expectedCount: 1,
+			expectedResults: []CheckResult{
+				{Path: "file2.go", Identifier: "TEST002"},
+			},
 		},
 		{
 			name: "remove by identifier only",
@@ -95,7 +97,7 @@ func TestRemoveByIdentifier(t *testing.T) {
 			ignores: []ToolConfigIgnore{
 				{Identifier: "TEST001"},
 			},
-			expectedCount: 0,
+			expectedResults: []CheckResult{},
 		},
 		{
 			name: "no matches",
@@ -106,7 +108,53 @@ func TestRemoveByIdentifier(t *testing.T) {
 			ignores: []ToolConfigIgnore{
 				{Path: "file3.go", Identifier: "TEST003"},
 			},
-			expectedCount: 2,
+			expectedResults: []CheckResult{
+				{Path: "file1.go", Identifier: "TEST001"},
+				{Path: "file2.go", Identifier: "TEST002"},
+			},
+		},
+		{
+			name: "identifier with message should not ignore all",
+			initialResults: []CheckResult{
+				{Path: "file1.go", Identifier: "TEST001", Message: "error 1"},
+				{Path: "file2.go", Identifier: "TEST001", Message: "error 2"},
+			},
+			ignores: []ToolConfigIgnore{
+				{Identifier: "TEST001", Message: "error 1"},
+			},
+			expectedResults: []CheckResult{
+				{Path: "file1.go", Identifier: "TEST001", Message: "error 1"},
+				{Path: "file2.go", Identifier: "TEST001", Message: "error 2"},
+			},
+		},
+		{
+			name: "identifier only should ignore all matching errors",
+			initialResults: []CheckResult{
+				{Path: "file1.go", Identifier: "TEST001", Message: "error 1"},
+				{Path: "file2.go", Identifier: "TEST001", Message: "error 2"},
+				{Path: "file3.go", Identifier: "TEST002", Message: "error 3"},
+			},
+			ignores: []ToolConfigIgnore{
+				{Identifier: "TEST001"},
+			},
+			expectedResults: []CheckResult{
+				{Path: "file3.go", Identifier: "TEST002", Message: "error 3"},
+			},
+		},
+		{
+			name: "multiple ignores with different conditions",
+			initialResults: []CheckResult{
+				{Path: "file1.go", Identifier: "TEST001", Message: "error 1"},
+				{Path: "file2.go", Identifier: "TEST001", Message: "error 2"},
+				{Path: "file3.go", Identifier: "TEST002", Message: "error 3"},
+				{Path: "file4.go", Identifier: "TEST003", Message: "error 4"},
+			},
+			ignores: []ToolConfigIgnore{
+				{Identifier: "TEST001"},                   // Should remove all TEST001
+				{Path: "file3.go", Identifier: "TEST002"}, // Should remove only TEST002 in file3.go
+				{Message: "error 4"},                      // Should remove anything with this message
+			},
+			expectedResults: []CheckResult{},
 		},
 	}
 
@@ -118,7 +166,7 @@ func TestRemoveByIdentifier(t *testing.T) {
 			}
 
 			check.RemoveByIdentifier(tt.ignores)
-			assert.Len(t, check.Results, tt.expectedCount)
+			assert.ElementsMatch(t, tt.expectedResults, check.Results)
 		})
 	}
 }

@@ -40,12 +40,24 @@ func (c *Check) RemoveByIdentifier(ignores []ToolConfigIgnore) *Check {
 	for _, r := range c.Results {
 		shouldKeep := true
 		for _, ignore := range ignores {
-			if ignore.Identifier != "" && r.Identifier == ignore.Identifier && (r.Path == ignore.Path || ignore.Path == "") {
-				shouldKeep = false
-				break
+			// Only ignore all matches when identifier is the only field specified
+			if ignore.Identifier != "" && ignore.Path == "" && ignore.Message == "" {
+				if r.Identifier == ignore.Identifier {
+					shouldKeep = false
+					break
+				}
 			}
 
-			if ignore.Message != "" && strings.Contains(r.Message, ignore.Message) && (r.Path == ignore.Path || ignore.Path == "") {
+			// If path is specified with identifier (but no message), match both
+			if ignore.Identifier != "" && ignore.Path != "" && ignore.Message == "" {
+				if r.Identifier == ignore.Identifier && r.Path == ignore.Path {
+					shouldKeep = false
+					break
+				}
+			}
+
+			// Handle message-based ignores (when no identifier is specified)
+			if ignore.Identifier == "" && ignore.Message != "" && strings.Contains(r.Message, ignore.Message) && (r.Path == ignore.Path || ignore.Path == "") {
 				shouldKeep = false
 				break
 			}
