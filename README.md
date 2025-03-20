@@ -1,7 +1,5 @@
 # Extension Verifier
 
-**This tool is still in development and experimental, maybe not finished**
-
 The idea of this tool is to provide a Tool which can find automated issues in your extensions, fix them automatically and also format them.
 
 ### Linting
@@ -38,11 +36,11 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Pull verifier
-              run: docker pull ghcr.io/shopwarelabs/extension-verifier:latest
-
-            - name: Run Check
-              run: docker run --rm -e GITHUB_STEP_SUMMARY -e GITHUB_ACTIONS -v $GITHUB_STEP_SUMMARY:$GITHUB_STEP_SUMMARY -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest check /ext --check-against ${{ matrix.version-selection }}
+            - name: Check extension
+              uses: shopware/github-actions/extension-verifier@main
+              with:
+                   action: check
+                   check-against: ${{ matrix.version-selection }}
 ```
 
 ## Reporter
