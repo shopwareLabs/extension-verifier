@@ -71,6 +71,7 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 				"--ignore-pattern", "vendor/**",
 				"--ignore-pattern", "test/e2e/**",
 				"--ignore-pattern", "**/jest.config.js",
+				"--no-error-on-unmatched-pattern",
 			)
 			eslint.Dir = p
 			eslint.Env = env
@@ -139,6 +140,7 @@ func (e Eslint) Fix(ctx context.Context, config ToolConfig) error {
 				"--ignore-pattern", "test/e2e/**",
 				"--ignore-pattern", "**/jest.config.js",
 				"--fix",
+				"--no-error-on-unmatched-pattern",
 			)
 			eslint.Dir = p
 			eslint.Env = env
