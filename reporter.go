@@ -59,9 +59,10 @@ func doSummaryReport(result *tool.Check) error {
 		fmt.Printf("\n%s\n", file)
 		for _, r := range results {
 			totalProblems++
-			if r.Severity == "error" {
+			switch r.Severity {
+			case "error":
 				errorCount++
-			} else if r.Severity == "warning" {
+			case "warning":
 				warningCount++
 			}
 			fmt.Printf("  %d  %-7s  %s  %s\n", r.Line, r.Severity, r.Message, r.Identifier)
@@ -80,7 +81,9 @@ func doJSONReport(result *tool.Check) error {
 		return err
 	}
 
-	os.Stdout.Write(j)
+	if _, err := os.Stdout.Write(j); err != nil {
+		return fmt.Errorf("failed to write JSON output: %w", err)
+	}
 
 	return nil
 }
@@ -195,7 +198,9 @@ func doJUnitReport(result *tool.Check) error {
 }
 
 func doMarkdownReport(result *tool.Check) error {
-	os.Stdout.Write([]byte(convertResultsToMarkdown(result.Results)))
+	if _, err := os.Stdout.Write([]byte(convertResultsToMarkdown(result.Results))); err != nil {
+		return fmt.Errorf("failed to write markdown output: %w", err)
+	}
 
 	return nil
 }

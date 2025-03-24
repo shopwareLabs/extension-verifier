@@ -76,7 +76,11 @@ var checkCommand = &cobra.Command{
 
 		toolCfg.CheckAgainst = checkAgainst
 
-		defer os.RemoveAll(tmpDir)
+		defer func() {
+			if err := os.RemoveAll(tmpDir); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to remove temporary directory: %v\n", err)
+			}
+		}()
 
 		result := tool.NewCheck()
 
