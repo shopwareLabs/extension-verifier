@@ -65,14 +65,22 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open source file: %w", err)
 	}
-	defer sourceFile.Close()
+	defer func() {
+		if closeErr := sourceFile.Close(); closeErr != nil {
+			err = fmt.Errorf("failed to close source file: %w", closeErr)
+		}
+	}()
 
 	// Create target file
 	targetFile, err := os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("failed to create target file: %w", err)
 	}
-	defer targetFile.Close()
+	defer func() {
+		if closeErr := targetFile.Close(); closeErr != nil {
+			err = fmt.Errorf("failed to close target file: %w", closeErr)
+		}
+	}()
 
 	// Copy the contents
 	if _, err := io.Copy(targetFile, sourceFile); err != nil {

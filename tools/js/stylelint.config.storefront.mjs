@@ -16,6 +16,9 @@ export default {
         "max-nesting-depth": [3, {
             "ignore": ["blockless-at-rules", "pseudo-classes"],
             "severity": "warning"
-        }]
+        }],
+        "selector-max-type": [0, {
+            "message": "Selectors containing elements like \"%s\" should be avoided because the element type might change. Prefer to use .classes, #ids and [data-attributes] instead."
+        }],
     }
 };

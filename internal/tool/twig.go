@@ -54,8 +54,16 @@ func (t Twig) Fix(ctx context.Context, config ToolConfig) error {
 			return err
 		}
 
-		defer os.RemoveAll(oldVersion)
-		defer os.RemoveAll(newVersion)
+		defer func() {
+			if err := os.RemoveAll(oldVersion); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to remove old version directory: %v\n", err)
+			}
+		}()
+		defer func() {
+			if err := os.RemoveAll(newVersion); err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to remove new version directory: %v\n", err)
+			}
+		}()
 
 		_ = filepath.Walk(twigFolder, func(file string, info os.FileInfo, _ error) error {
 			if info.IsDir() {
