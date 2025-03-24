@@ -31,7 +31,11 @@ func IsProject(root string) bool {
 		return false
 	}
 
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("failed to close composer.json: %w", closeErr)
+		}
+	}()
 
 	if err := json.NewDecoder(file).Decode(&composerJsonData); err != nil {
 		return false
@@ -49,7 +53,11 @@ func getShopwareConstraint(root string) (*version.Constraints, error) {
 		return nil, err
 	}
 
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("failed to close composer.json: %w", closeErr)
+		}
+	}()
 
 	var composerJsonData struct {
 		Require struct {

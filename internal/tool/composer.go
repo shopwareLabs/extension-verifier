@@ -24,7 +24,9 @@ func installComposerDeps(rootDir string, checkAgainst string) error {
 			log, err := composerInstall.CombinedOutput()
 
 			if err != nil {
-				os.Stderr.Write(log)
+				if _, writeErr := os.Stderr.Write(log); writeErr != nil {
+					return fmt.Errorf("failed to write error log: %w (original error: %v)", writeErr, err)
+				}
 				return err
 			}
 		}
@@ -41,7 +43,9 @@ func installComposerDeps(rootDir string, checkAgainst string) error {
 		log, err := composerInstall.CombinedOutput()
 
 		if err != nil {
-			os.Stderr.Write(log)
+			if _, writeErr := os.Stderr.Write(log); writeErr != nil {
+				return fmt.Errorf("failed to write error log: %w (original error: %v)", writeErr, err)
+			}
 			return err
 		}
 	}
