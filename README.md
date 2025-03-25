@@ -20,9 +20,8 @@ The Extension Verifier is only available as Docker Image as it contains all Tool
 docker run --rm ghcr.io/shopwarelabs/extension-verifier:latest
 ```
 
-::: info
-The tag latest points always to the most recent version, you may want to pin the Docker Image to a specific version and update it from time to time.
-:::
+> [!NOTE]
+> The tag latest points always to the most recent version, you may want to pin the Docker Image to a specific version and update it from time to time.
 
 Additionally, we provide a ready to use GitHub Action:
 
@@ -88,9 +87,8 @@ The check command has multiple reporting options, you can use `--reporter` to sp
 
 To run the refactoring, you can use following command:
 
-::: warning
-Make sure you have a copy of your extension before running the command, as it will change your files!
-:::
+> [!WARNING]  
+> Make sure you have a copy of your extension before running the command, as it will change your files!
 
 ```shell
 docker run --rm -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest fix /ext
