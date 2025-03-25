@@ -90,7 +90,6 @@ Instead of running all tools, you can choose to run specific tools using the `--
 - `phpstan` - PHP static analysis
 - `sw-cli` - Shopware CLI validation checks
 - `stylelint` - CSS/SCSS linting
-- `twig` - Twig template checks
 - `admin-twig` - Admin Twig template checks
 - `php-cs-fixer` - PHP code style fixing
 - `prettier` - Code formatting
