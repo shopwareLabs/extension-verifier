@@ -8,6 +8,10 @@ import (
 
 type SWCLI struct{}
 
+func (s SWCLI) Name() string {
+	return "sw-cli"
+}
+
 func (s SWCLI) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	if config.Extension == nil {
 		return nil

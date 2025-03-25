@@ -41,6 +41,10 @@ type EslintOutput []struct {
 
 type Eslint struct{}
 
+func (e Eslint) Name() string {
+	return "eslint"
+}
+
 func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	cwd, err := os.Getwd()
 

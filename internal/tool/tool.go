@@ -44,6 +44,7 @@ type ToolConfigIgnore struct {
 }
 
 type Tool interface {
+	Name() string
 	Check(ctx context.Context, check *Check, config ToolConfig) error
 	Fix(ctx context.Context, config ToolConfig) error
 	Format(ctx context.Context, config ToolConfig, dryRun bool) error

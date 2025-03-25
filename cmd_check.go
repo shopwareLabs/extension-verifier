@@ -86,7 +86,15 @@ var checkCommand = &cobra.Command{
 
 		var gr errgroup.Group
 
-		for _, tool := range tool.GetTools() {
+		tools := tool.GetTools()
+		only, _ := cmd.Flags().GetString("only")
+
+		tools, err = filterTools(tools, only)
+		if err != nil {
+			return err
+		}
+
+		for _, tool := range tools {
 			tool := tool
 			gr.Go(func() error {
 				return tool.Check(cmd.Context(), result, *toolCfg)
@@ -105,6 +113,7 @@ func init() {
 	rootCmd.AddCommand(checkCommand)
 	checkCommand.PersistentFlags().String("reporter", "", "Reporting format (summary, json, github, junit, markdown)")
 	checkCommand.PersistentFlags().String("check-against", "highest", "Check against Shopware Version (highest, lowest)")
+	checkCommand.PersistentFlags().String("only", "", "Run only specific tools by name (comma-separated, e.g. phpstan,eslint)")
 	checkCommand.PreRunE = func(cmd *cobra.Command, args []string) error {
 		reporter, _ := cmd.Flags().GetString("reporter")
 		if reporter != "summary" && reporter != "json" && reporter != "github" && reporter != "junit" && reporter != "markdown" && reporter != "" {

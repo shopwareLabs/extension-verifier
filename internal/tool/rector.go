@@ -10,6 +10,10 @@ import (
 
 type Rector struct{}
 
+func (r Rector) Name() string {
+	return "rector"
+}
+
 func (r Rector) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	return nil
 }

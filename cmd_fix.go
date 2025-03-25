@@ -39,7 +39,16 @@ var (
 
 			var gr errgroup.Group
 
-			for _, tool := range tool.GetTools() {
+			tools := tool.GetTools()
+			only, _ := cmd.Flags().GetString("only")
+
+			tools, err = filterTools(tools, only)
+			if err != nil {
+				return err
+			}
+
+			for _, tool := range tools {
+				tool := tool
 				gr.Go(func() error {
 					return tool.Fix(cmd.Context(), *toolCfg)
 				})
@@ -56,5 +65,6 @@ var (
 
 func init() {
 	fixCommand.Flags().BoolVar(&allowNonGit, "allow-non-git", false, "Allow running the fix command on non-git repositories")
+	fixCommand.Flags().String("only", "", "Run only specific tools by name (comma-separated, e.g. phpstan,eslint)")
 	rootCmd.AddCommand(fixCommand)
 }

@@ -32,6 +32,10 @@ type StylelintOutput []struct {
 
 type StyleLint struct{}
 
+func (s StyleLint) Name() string {
+	return "stylelint"
+}
+
 func (s StyleLint) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	cwd, err := os.Getwd()
 	if err != nil {
