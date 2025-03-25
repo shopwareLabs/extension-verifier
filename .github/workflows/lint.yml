@@ -38,6 +38,7 @@ jobs:
             golangci-lint.run:443
             objects.githubusercontent.com:443
             proxy.golang.org:443
+            raw.githubusercontent.com:443
 
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
 
@@ -49,7 +50,7 @@ jobs:
           cache: true
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@4696ba8babb6127d732c3c6dde519db15edab9ea # ratchet:golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@1481404843c368bc19ca9406f87d6e0fc97bdcfd # ratchet:golangci/golangci-lint-action@v6
         with:
           version: latest
           args: --timeout 4m
