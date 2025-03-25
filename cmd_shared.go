@@ -1,0 +1,36 @@
+package main
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/shopware/extension-verifier/internal/tool"
+)
+
+func filterTools(tools []tool.Tool, only string) ([]tool.Tool, error) {
+	if only == "" {
+		return tools, nil
+	}
+
+	var filteredTools []tool.Tool
+	requestedTools := strings.Split(only, ",")
+
+	for _, requestedTool := range requestedTools {
+		requestedTool = strings.TrimSpace(requestedTool)
+		found := false
+
+		for _, t := range tools {
+			if t.Name() == requestedTool {
+				filteredTools = append(filteredTools, t)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return nil, fmt.Errorf("tool with name %q not found", requestedTool)
+		}
+	}
+
+	return filteredTools, nil
+}

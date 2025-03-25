@@ -11,6 +11,10 @@ import (
 
 type PHPCSFixer struct{}
 
+func (p PHPCSFixer) Name() string {
+	return "php-cs-fixer"
+}
+
 func (p PHPCSFixer) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	return nil
 }

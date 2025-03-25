@@ -18,6 +18,10 @@ Resources/store/**
 
 type Prettier struct{}
 
+func (b Prettier) Name() string {
+	return "prettier"
+}
+
 func (b Prettier) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	return nil
 }

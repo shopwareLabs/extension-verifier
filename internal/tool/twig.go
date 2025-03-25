@@ -18,6 +18,10 @@ import (
 
 type Twig struct{}
 
+func (t Twig) Name() string {
+	return "twig"
+}
+
 func (t Twig) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	return nil
 }

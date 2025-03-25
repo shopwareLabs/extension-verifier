@@ -17,6 +17,10 @@ import (
 
 type AdminTwigLinter struct{}
 
+func (a AdminTwigLinter) Name() string {
+	return "admin-twig"
+}
+
 func (a AdminTwigLinter) Check(ctx context.Context, check *Check, config ToolConfig) error {
 	fixers := admintwiglinter.GetFixers(version.Must(version.NewVersion(config.MinShopwareVersion)))
 

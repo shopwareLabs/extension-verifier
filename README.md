@@ -83,6 +83,37 @@ The check command has multiple reporting options, you can use `--reporter` to sp
 - `github` - GitHub Actions output
 - `markdown` - markdown output
 
+## Running Specific Tools
+
+Instead of running all tools, you can choose to run specific tools using the `--only` flag. The following tools are available:
+
+- `phpstan` - PHP static analysis
+- `sw-cli` - Shopware CLI validation checks
+- `stylelint` - CSS/SCSS linting
+- `twig` - Twig template checks
+- `admin-twig` - Admin Twig template checks
+- `php-cs-fixer` - PHP code style fixing
+- `prettier` - Code formatting
+- `eslint` - JavaScript/TypeScript linting
+- `rector` - PHP code refactoring
+
+You can run a single tool:
+
+```shell
+docker run --rm -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest check /ext --only phpstan
+```
+
+Or run multiple tools by separating them with commas:
+
+```shell
+docker run --rm -v $(pwd):/ext ghcr.io/shopwarelabs/extension-verifier:latest check /ext --only "phpstan,eslint,stylelint"
+```
+
+This is particularly useful when:
+- You want to focus on specific aspects of your code
+- You want to run only the relevant tools for the files you've changed
+- You want to fix issues one tool at a time
+
 ## Refactoring
 
 To run the refactoring, you can use following command:
@@ -141,8 +172,6 @@ The fixers are enabled by the supported Shopware Version by the constraint in th
 ### Missing classes in Storefront/Elasticsearch bundle
 
 Your plugin typically requires only `shopware/core`, but when you use classes from Storefront or Elasticsearch Bundle and they are required, you have to add `shopware/storefront` or `shopware/elasticsearch` also to the `require` in the composer.json. If those features are optional with `class_exists` checks, you want to add them into `require-dev`, so the dependencies are installed only for development, and PHPStan can recognize the files.
-
-
 
 # Contribution
 

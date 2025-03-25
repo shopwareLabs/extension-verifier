@@ -28,7 +28,16 @@ var formatCommand = &cobra.Command{
 
 		var gr errgroup.Group
 
-		for _, tool := range tool.GetTools() {
+		tools := tool.GetTools()
+		only, _ := cmd.Flags().GetString("only")
+
+		tools, err = filterTools(tools, only)
+		if err != nil {
+			return err
+		}
+
+		for _, tool := range tools {
+			tool := tool
 			gr.Go(func() error {
 				return tool.Format(cmd.Context(), *toolCfg, dryRun)
 			})
@@ -45,4 +54,5 @@ var formatCommand = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(formatCommand)
 	formatCommand.PersistentFlags().Bool("dry-run", false, "Dry run the formatting")
+	formatCommand.PersistentFlags().String("only", "", "Run only specific tools by name (comma-separated, e.g. phpstan,eslint)")
 }
