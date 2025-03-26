@@ -48,14 +48,8 @@ func (n NumberFieldFixer) Fix(nodes []html.Node) error {
 							Value: attr.Value,
 						})
 					case "v-model:value":
-						newAttrs = append(newAttrs, html.Attribute{
-							Key:   ":model-value",
-							Value: attr.Value,
-						})
-						newAttrs = append(newAttrs, html.Attribute{
-							Key:   "@change",
-							Value: attr.Value + " = $event",
-						})
+						attr.Key = "v-model"
+						newAttrs = append(newAttrs, attr)
 					case "@update:value":
 						newAttrs = append(newAttrs, html.Attribute{
 							Key:   "@change",
