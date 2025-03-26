@@ -18,6 +18,11 @@ func TestSwitchFixer(t *testing.T) {
 			after:       `<mt-switch>Hello World</mt-switch>`,
 		},
 		{
+			description: "replace v-model:value",
+			before:      `<sw-switch-field v-model:value="foobar">Hello World</sw-switch-field>`,
+			after:       `<mt-switch v-model="foobar">Hello World</mt-switch>`,
+		},
+		{
 			description: "replace noMarginTop with removeTopMargin",
 			before:      `<sw-switch-field noMarginTop />`,
 			after:       `<mt-switch removeTopMargin/>`,
