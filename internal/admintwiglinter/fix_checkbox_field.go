@@ -46,7 +46,7 @@ func (c CheckboxFieldFixer) Fix(nodes []html.Node) error {
 					switch attr.Key {
 					case ":value":
 						newAttrs = append(newAttrs, html.Attribute{Key: ":checked", Value: attr.Value})
-					case "v-model":
+					case "v-model", "v-model:value":
 						newAttrs = append(newAttrs, html.Attribute{Key: "v-model:checked", Value: attr.Value})
 					case "id", "ghostValue", "padded":
 						// remove these attributes without replacement
