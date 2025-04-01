@@ -48,6 +48,9 @@ func (s SwitchFixer) Fix(nodes []html.Node) error {
 						// remove these attributes
 					case "value":
 						newAttrs = append(newAttrs, html.Attribute{Key: "checked", Value: attr.Value})
+					case "v-model:value":
+						attr.Key = "v-model"
+						newAttrs = append(newAttrs, attr)
 					default:
 						newAttrs = append(newAttrs, attr)
 					}
