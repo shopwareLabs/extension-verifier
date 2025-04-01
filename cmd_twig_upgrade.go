@@ -1,22 +1,29 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
-	"github.com/google/generative-ai-go/genai"
+	"github.com/charmbracelet/log"
+	"github.com/shopware/extension-verifier/internal/llm"
 	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/shopware/extension-verifier/internal/twig"
 	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
-	"google.golang.org/api/option"
 )
+
+const systemPrompt = `
+You are a helper agent to help to upgrade Twig templates. I will give you the old and new template happend in the Software and as third the extended template. Apply the changes happen between old and new template to the extended template.
+- Do only the necessary changes to the extended template.
+- Do only modify the content inside the block and dont add new blocks
+- Please also only output the modified extended template nothing more.
+- Adjust also HTML elements to be more accessibility friendly.
+- If in a {% block %} is {{ parent() }}, ignore it and dont modify the content of the block
+`
 
 var twigUpgradeCommand = &cobra.Command{
 	Use:   "twig-upgrade [path] [old-shopware-version] [new-shopware-version]",
@@ -35,16 +42,15 @@ var twigUpgradeCommand = &cobra.Command{
 			return err
 		}
 
-		apiKey := os.Getenv("GEMINI_API_KEY")
-
-		if apiKey == "" {
-			return fmt.Errorf("GEMINI_API_KEY is not set")
-		}
-
-		client, err := genai.NewClient(cmd.Context(), option.WithAPIKey(apiKey))
+		client, err := llm.NewLLMClient(cmd.Flag("provider").Value.String())
 
 		if err != nil {
 			return err
+		}
+
+		options := &llm.LLMOptions{
+			Model:        cmd.Flag("model").Value.String(),
+			SystemPrompt: systemPrompt,
 		}
 
 		for _, sourceDirectory := range toolCfg.SourceDirectories {
@@ -77,7 +83,7 @@ var twigUpgradeCommand = &cobra.Command{
 				}
 			}()
 
-			_ = filepath.Walk(twigFolder, func(file string, info os.FileInfo, _ error) error {
+			err = filepath.Walk(twigFolder, func(file string, info os.FileInfo, _ error) error {
 				if info.IsDir() {
 					return nil
 				}
@@ -127,14 +133,6 @@ var twigUpgradeCommand = &cobra.Command{
 				}
 
 				var str strings.Builder
-				str.WriteString("You are a helper agent to help to upgrade Twig templates. I will give you the old and new template happend in the Software and as third the extended template. Apply the changes happen between old and new template to the extended template.\n")
-				str.WriteString("Follow following rules while making adjustments to the extended template:\n")
-				str.WriteString("- Do only the necessary changes to the extended template.\n")
-				str.WriteString("- Do only modify the content inside the block and dont add new blocks\n")
-				str.WriteString("- Please also only output the modified extended template nothing more.\n")
-				str.WriteString("- Adjust also HTML elements to be more accessibility friendly.\n")
-				str.WriteString("- If in a {% block %} is {{ parent() }}, ignore it and dont modify the content of the block\n")
-				str.WriteString("\n")
 				str.WriteString("This was the old template:\n")
 				str.WriteString("```twig\n")
 				str.WriteString(string(oldTemplateText))
@@ -148,13 +146,13 @@ var twigUpgradeCommand = &cobra.Command{
 				str.WriteString(string(content))
 				str.WriteString("\n```")
 
-				resp, err := generateContent(cmd.Context(), client, str.String())
+				log.Info("Processing file", "file", file)
+
+				text, err := client.Generate(cmd.Context(), str.String(), options)
 
 				if err != nil {
 					return err
 				}
-
-				text := string(resp.Candidates[0].Content.Parts[0].(genai.Text))
 
 				start := strings.Index(text, "```twig")
 				end := strings.LastIndex(text, "```")
@@ -172,24 +170,14 @@ var twigUpgradeCommand = &cobra.Command{
 
 				return os.WriteFile(file, []byte(text), os.ModePerm)
 			})
+
+			if err != nil {
+				return err
+			}
 		}
+
 		return nil
 	},
-}
-
-func generateContent(ctx context.Context, client *genai.Client, message string) (*genai.GenerateContentResponse, error) {
-	resp, err := client.GenerativeModel("gemini-2.0-pro-exp-02-05").GenerateContent(ctx, genai.Text(message))
-
-	if err != nil {
-		if strings.Contains(err.Error(), "Resource has been exhausted") {
-			fmt.Println("Resource exhausted, waiting 15 seconds before retrying")
-			time.Sleep(15 * time.Second)
-
-			return generateContent(ctx, client, message)
-		}
-	}
-
-	return resp, err
 }
 
 func cloneShopwareStorefront(version string) (string, error) {
@@ -199,7 +187,7 @@ func cloneShopwareStorefront(version string) (string, error) {
 		return "", err
 	}
 
-	git := exec.Command("git", "clone", "--branch", "v"+version, "https://github.com/shopware/storefront", tempDir, "--depth", "1")
+	git := exec.Command("git", "-c", "advice.detachedHead=false", "clone", "-q", "--branch", "v"+version, "https://github.com/shopware/storefront", tempDir, "--depth", "1")
 	git.Stdout = os.Stdout
 	git.Stderr = os.Stderr
 
@@ -211,5 +199,7 @@ func cloneShopwareStorefront(version string) (string, error) {
 }
 
 func init() {
+	twigUpgradeCommand.Flags().String("model", "gemma3:4b", "The model to use for the upgrade")
+	twigUpgradeCommand.Flags().String("provider", "ollama", "The provider to use for the upgrade")
 	rootCmd.AddCommand(twigUpgradeCommand)
 }
