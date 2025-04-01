@@ -86,7 +86,6 @@ func (c *Client) Generate(ctx context.Context, prompt string, options *LLMOption
 	if err != nil {
 		return "", fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -95,6 +94,10 @@ func (c *Client) Generate(ctx context.Context, prompt string, options *LLMOption
 	var response GenerateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return "", fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if err := resp.Body.Close(); err != nil {
+		return "", fmt.Errorf("failed to close response body: %w", err)
 	}
 
 	return response.Response, nil
