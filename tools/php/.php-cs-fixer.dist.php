@@ -49,6 +49,7 @@ return (new PhpCsFixer\Config())
     ])
     ->setFinder(PhpCsFixer\Finder::create()
         ->exclude('vendor')
+        ->name('/\.php$/')
         ->in(__DIR__),
     )
 ;
