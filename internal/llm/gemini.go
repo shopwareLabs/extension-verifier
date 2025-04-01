@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -16,14 +17,20 @@ type GeminiClient struct {
 	client *genai.Client
 }
 
-func newGeminiClient() *GeminiClient {
-	client, err := genai.NewClient(context.Background(), option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
+func newGeminiClient() (*GeminiClient, error) {
+	apiKey := os.Getenv("GEMINI_API_KEY")
 
-	if err != nil {
-		log.Fatal(err)
+	if apiKey == "" {
+		return nil, fmt.Errorf("GEMINI_API_KEY is not set")
 	}
 
-	return &GeminiClient{client: client}
+	client, err := genai.NewClient(context.Background(), option.WithAPIKey(apiKey))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &GeminiClient{client: client}, nil
 }
 
 func (c *GeminiClient) Generate(ctx context.Context, prompt string, options *LLMOptions) (string, error) {

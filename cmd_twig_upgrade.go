@@ -42,7 +42,12 @@ var twigUpgradeCommand = &cobra.Command{
 			return err
 		}
 
-		client := llm.NewLLMClient(cmd.Flag("provider").Value.String())
+		client, err := llm.NewLLMClient(cmd.Flag("provider").Value.String())
+
+		if err != nil {
+			return err
+		}
+
 		options := &llm.LLMOptions{
 			Model:        cmd.Flag("model").Value.String(),
 			SystemPrompt: systemPrompt,

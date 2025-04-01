@@ -13,7 +13,6 @@ import (
 // Client represents an Ollama API client
 type Client struct {
 	host   string
-	model  string
 	client *http.Client
 }
 
@@ -38,24 +37,18 @@ type GenerateResponse struct {
 }
 
 // newOllamaClient creates a new Ollama client instance
-func newOllamaClient() *Client {
+func newOllamaClient() (*Client, error) {
 	host := os.Getenv("OLLAMA_HOST")
 	if host == "" {
 		host = "http://localhost:11434"
 	}
 
-	model := os.Getenv("OLLAMA_MODEL")
-	if model == "" {
-		model = "deepseek-r1:1.5b"
-	}
-
 	return &Client{
-		host:  host,
-		model: model,
+		host: host,
 		client: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-	}
+	}, nil
 }
 
 // Generate sends a generation request to the Ollama API
@@ -101,14 +94,4 @@ func (c *Client) Generate(ctx context.Context, prompt string, options *LLMOption
 	}
 
 	return response.Response, nil
-}
-
-// SetModel changes the model used by the client
-func (c *Client) SetModel(model string) {
-	c.model = model
-}
-
-// SetHost changes the host used by the client
-func (c *Client) SetHost(host string) {
-	c.host = host
 }
