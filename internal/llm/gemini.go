@@ -27,7 +27,7 @@ func newGeminiClient() *GeminiClient {
 }
 
 func (c *GeminiClient) Generate(ctx context.Context, prompt string, options *LLMOptions) (string, error) {
-	resp, err := c.client.GenerativeModel("gemini-2.0-pro-exp-02-05").GenerateContent(ctx, genai.Text(prompt))
+	resp, err := c.client.GenerativeModel(options.Model).GenerateContent(ctx, genai.Text(options.SystemPrompt+"\n\n"+prompt))
 
 	if err != nil {
 		if strings.Contains(err.Error(), "Resource has been exhausted") {
