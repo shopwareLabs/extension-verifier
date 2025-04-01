@@ -28,6 +28,11 @@ func TestCheckboxFieldFixer(t *testing.T) {
 			after:       `<mt-checkbox v-model:checked="isCheckedValue"/>`,
 		},
 		{
+			description: "replace v-model:value with v-model:checked",
+			before:      `<sw-checkbox-field v-model:value="isCheckedValue"/>`,
+			after:       `<mt-checkbox v-model:checked="isCheckedValue"/>`,
+		},
+		{
 			description: "convert label slot to label prop",
 			before: `<sw-checkbox-field><template #label>
         Hello Shopware
