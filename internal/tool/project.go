@@ -149,7 +149,7 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 		return nil, err
 	}
 
-	for bundlePath, _ := range rootComposerJsonData.Extra.Bundles {
+	for bundlePath := range rootComposerJsonData.Extra.Bundles {
 		sourceDirectories = append(sourceDirectories, path.Join(root, bundlePath))
 
 		expectedAdminPath := path.Join(root, bundlePath, "Resources", "app", "administration")
