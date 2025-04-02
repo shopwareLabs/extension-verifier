@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/shopware/shopware-cli/extension"
+	"github.com/shopware/shopware-cli/logging"
 	"github.com/shopware/shopware-cli/shop"
 	"github.com/shyim/go-version"
 )
@@ -89,7 +90,7 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 		return nil, err
 	}
 
-	extensions := extension.FindExtensionsFromProject(context.Background(), root)
+	extensions := extension.FindExtensionsFromProject(logging.DisableLogger(context.Background()), root)
 
 	sourceDirectories := []string{}
 	adminDirectories := []string{}
@@ -128,6 +129,41 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 		storefrontDirectories = append(storefrontDirectories, getStorefrontFolders(ext)...)
 	}
 
+	var rootComposerJsonData rootComposerJson
+
+	rootComposerJsonPath := path.Join(root, "composer.json")
+
+	file, err := os.Open(rootComposerJsonPath)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			err = fmt.Errorf("failed to close composer.json: %w", closeErr)
+		}
+	}()
+
+	if err := json.NewDecoder(file).Decode(&rootComposerJsonData); err != nil {
+		return nil, err
+	}
+
+	for bundlePath, _ := range rootComposerJsonData.Extra.Bundles {
+		sourceDirectories = append(sourceDirectories, path.Join(root, bundlePath))
+
+		expectedAdminPath := path.Join(root, bundlePath, "Resources", "app", "administration")
+		expectedStorefrontPath := path.Join(root, bundlePath, "Resources", "app", "storefront")
+
+		if _, err := os.Stat(expectedAdminPath); err == nil {
+			adminDirectories = append(adminDirectories, expectedAdminPath)
+		}
+
+		if _, err := os.Stat(expectedStorefrontPath); err == nil {
+			storefrontDirectories = append(storefrontDirectories, expectedStorefrontPath)
+		}
+	}
+
 	var validationIgnores []ToolConfigIgnore
 
 	if shopCfg.Validation != nil {
@@ -153,4 +189,15 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 	}
 
 	return toolCfg, nil
+}
+
+type rootComposerJson struct {
+	Require map[string]string `json:"require"`
+	Extra   struct {
+		Bundles map[string]rootShopwareBundle `json:"shopware-bundles"`
+	}
+}
+
+type rootShopwareBundle struct {
+	Name string `json:"name"`
 }
