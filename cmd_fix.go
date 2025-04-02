@@ -25,16 +25,24 @@ var (
 				}
 			}
 
-			ext, err := extension.GetExtensionByFolder(args[0])
+			var toolCfg *tool.ToolConfig
+			var err error
 
-			if err != nil {
-				return err
-			}
+			if tool.IsProject(args[0]) {
+				toolCfg, err = tool.GetConfigFromProject(args[0])
+				if err != nil {
+					return err
+				}
+			} else {
+				ext, err := extension.GetExtensionByFolder(args[0])
+				if err != nil {
+					return err
+				}
 
-			toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
-
-			if err != nil {
-				return err
+				toolCfg, err = tool.ConvertExtensionToToolConfig(ext)
+				if err != nil {
+					return err
+				}
 			}
 
 			var gr errgroup.Group
