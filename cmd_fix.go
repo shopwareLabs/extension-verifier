@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/shopware/extension-verifier/internal/tool"
-	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/shopware/extension-verifier/internal/tool"
+	"github.com/shopware/shopware-cli/extension"
 )
 
 func filterTools(tools []tool.Tool, only string) ([]tool.Tool, error) {

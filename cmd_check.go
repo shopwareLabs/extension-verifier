@@ -36,7 +36,11 @@ var checkCommand = &cobra.Command{
 		var toolCfg *tool.ToolConfig
 
 		if stat.IsDir() {
-			toolCfg, err = getToolConfig(args[0])
+			if err := copyFiles(args[0], tmpDir); err != nil {
+				return err
+			}
+
+			toolCfg, err = getToolConfig(tmpDir)
 			if err != nil {
 				return err
 			}
