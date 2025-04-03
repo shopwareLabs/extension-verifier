@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/shopware/extension-verifier/internal/tool"
-	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -12,19 +11,12 @@ var formatCommand = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Short: "Formats the Shopware extension",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ext, err := extension.GetExtensionByFolder(args[0])
-
+		toolCfg, err := getToolConfig(args[0])
 		if err != nil {
 			return err
 		}
 
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
-
-		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
-
-		if err != nil {
-			return err
-		}
 
 		var gr errgroup.Group
 

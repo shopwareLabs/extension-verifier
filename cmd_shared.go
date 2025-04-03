@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/shopware/extension-verifier/internal/tool"
+	"github.com/shopware/shopware-cli/extension"
 )
 
 func filterTools(tools []tool.Tool, only string) ([]tool.Tool, error) {
@@ -33,4 +34,28 @@ func filterTools(tools []tool.Tool, only string) ([]tool.Tool, error) {
 	}
 
 	return filteredTools, nil
+}
+
+func getToolConfig(path string) (*tool.ToolConfig, error) {
+	var toolCfg *tool.ToolConfig
+	var err error
+
+	if tool.IsProject(path) {
+		toolCfg, err = tool.GetConfigFromProject(path)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		ext, err := extension.GetExtensionByFolder(path)
+		if err != nil {
+			return nil, err
+		}
+
+		toolCfg, err = tool.ConvertExtensionToToolConfig(ext)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return toolCfg, nil
 }

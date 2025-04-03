@@ -1,0 +1,137 @@
+name: PR Docker Image Workflow
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+jobs:
+  # Build and push Docker image, then comment on PR
+  build-and-comment:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Lowercase repository name
+        id: repo-name
+        run: |
+          echo "REPO_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ghcr.io/${{ steps.repo-name.outputs.REPO_NAME }}/pr-${{ github.event.pull_request.number }}:latest
+      
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const imageName = `ghcr.io/${{ steps.repo-name.outputs.REPO_NAME }}/pr-${context.issue.number}:latest`;
+            const commentBody = `📦 Docker image for this PR is available at: \`${imageName}\`
+            
+            You can pull it with:
+            \`\`\`
+            docker pull ${imageName}
+            docker run ${imageName}
+            \`\`\``;
+
+            // Get all comments on the PR
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            // Look for an existing Docker image comment
+            const dockerComment = comments.data.find(comment => 
+              comment.body.includes('📦 Docker image for this PR is available at:')
+            );
+
+            if (dockerComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: dockerComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
+
+  # Delete Docker image when PR is closed/merged
+  delete-image:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    
+    steps:
+      - name: Lowercase repository name
+        id: repo-name
+        run: |
+          echo "OWNER=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "REPO=$(echo '${{ github.repository }}' | cut -d '/' -f 2 | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      
+      - name: Delete Docker image
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = '${{ steps.repo-name.outputs.OWNER }}';
+            const repo = '${{ steps.repo-name.outputs.REPO }}';
+            const package_name = `${repo}/pr-${context.issue.number}`;
+            
+            console.log(`Attempting to delete package: ${package_name}`);
+            
+            try {
+              // For organization repos
+              await github.rest.packages.deletePackageForOrg({
+                package_type: 'container',
+                package_name: package_name,
+                org: owner
+              });
+              console.log('Package deleted successfully via org API');
+            } catch (orgError) {
+              console.log(`Error deleting via org API: ${orgError.message}`);
+              
+              try {
+                // For user repos
+                await github.rest.packages.deletePackageForUser({
+                  package_type: 'container',
+                  package_name: package_name,
+                  username: owner
+                });
+                console.log('Package deleted successfully via user API');
+              } catch (userError) {
+                console.log(`Error deleting via user API: ${userError.message}`);
+              }
+            }

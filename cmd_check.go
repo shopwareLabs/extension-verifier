@@ -33,35 +33,19 @@ var checkCommand = &cobra.Command{
 			return err
 		}
 
-		var ext extension.Extension
 		var toolCfg *tool.ToolConfig
 
 		if stat.IsDir() {
-			if !tool.IsProject(args[0]) {
-				if err := copyFiles(args[0], tmpDir); err != nil {
-					return err
-				}
+			if err := copyFiles(args[0], tmpDir); err != nil {
+				return err
+			}
 
-				ext, err = extension.GetExtensionByFolder(tmpDir)
-
-				if err != nil {
-					return err
-				}
-
-				toolCfg, err = tool.ConvertExtensionToToolConfig(ext)
-
-				if err != nil {
-					return err
-				}
-			} else {
-				toolCfg, err = tool.GetConfigFromProject(args[0])
-
-				if err != nil {
-					return err
-				}
+			toolCfg, err = getToolConfig(tmpDir)
+			if err != nil {
+				return err
 			}
 		} else {
-			ext, err = extension.GetExtensionByZip(args[0])
+			ext, err := extension.GetExtensionByZip(args[0])
 
 			if err != nil {
 				return err

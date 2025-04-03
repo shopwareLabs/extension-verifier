@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/shopware/extension-verifier/internal/tool"
-	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -25,14 +24,7 @@ var (
 				}
 			}
 
-			ext, err := extension.GetExtensionByFolder(args[0])
-
-			if err != nil {
-				return err
-			}
-
-			toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
-
+			toolCfg, err := getToolConfig(args[0])
 			if err != nil {
 				return err
 			}
