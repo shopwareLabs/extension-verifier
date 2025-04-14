@@ -31,6 +31,11 @@ func copyFiles(currentPath string, targetPath string) error {
 			return fmt.Errorf("failed to get relative path for %q: %w", path, err)
 		}
 
+		// Skip .devenv and .direnv folders
+		if info.IsDir() && (relPath == ".devenv" || relPath == ".direnv") {
+			return filepath.SkipDir
+		}
+
 		// Construct target path
 		targetFilePath := filepath.Join(targetPath, relPath)
 
