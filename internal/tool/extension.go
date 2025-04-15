@@ -25,7 +25,7 @@ func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) 
 		Extension:             ext,
 		ValidationIgnores:     ignores,
 		RootDir:               ext.GetPath(),
-		SourceDirectories:     []string{ext.GetRootDir()},
+		SourceDirectories:     ext.GetSourceDirs(),
 		AdminDirectories:      getAdminFolders(ext),
 		StorefrontDirectories: getStorefrontFolders(ext),
 	}
@@ -82,8 +82,10 @@ func determineVersionRange(cfg *ToolConfig, versionConstraint *version.Constrain
 }
 
 func getAdminFolders(ext extension.Extension) []string {
-	paths := []string{
-		path.Join(ext.GetResourcesDir(), "app", "administration"),
+	paths := []string{}
+
+	for _, sourceDirs := range ext.GetSourceDirs() {
+		paths = append(paths, path.Join(sourceDirs, "Resources", "app", "administration"))
 	}
 
 	for _, bundle := range ext.GetExtensionConfig().Build.ExtraBundles {
@@ -94,8 +96,10 @@ func getAdminFolders(ext extension.Extension) []string {
 }
 
 func getStorefrontFolders(ext extension.Extension) []string {
-	paths := []string{
-		path.Join(ext.GetResourcesDir(), "app", "storefront"),
+	paths := []string{}
+
+	for _, sourceDirs := range ext.GetSourceDirs() {
+		paths = append(paths, path.Join(sourceDirs, "Resources", "app", "storefront"))
 	}
 
 	for _, bundle := range ext.GetExtensionConfig().Build.ExtraBundles {

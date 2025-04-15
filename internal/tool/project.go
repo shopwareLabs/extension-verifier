@@ -124,7 +124,10 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 			continue
 		}
 
-		sourceDirectories = append(sourceDirectories, ext.GetRootDir())
+		for _, sourceDirs := range ext.GetSourceDirs() {
+			sourceDirectories = append(sourceDirectories, path.Join(ext.GetPath(), sourceDirs))
+		}
+
 		adminDirectories = append(adminDirectories, getAdminFolders(ext)...)
 		storefrontDirectories = append(storefrontDirectories, getStorefrontFolders(ext)...)
 	}
