@@ -66,17 +66,18 @@ var twigUpgradeCommand = &cobra.Command{
 				return err
 			}
 
+			defer func() {
+				if err := os.RemoveAll(oldVersion); err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to remove old version directory: %v\n", err)
+				}
+			}()
+
 			newVersion, err := cloneShopwareStorefront(args[2])
 
 			if err != nil {
 				return err
 			}
 
-			defer func() {
-				if err := os.RemoveAll(oldVersion); err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to remove old version directory: %v\n", err)
-				}
-			}()
 			defer func() {
 				if err := os.RemoveAll(newVersion); err != nil {
 					fmt.Fprintf(os.Stderr, "Failed to remove new version directory: %v\n", err)
