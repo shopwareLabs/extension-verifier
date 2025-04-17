@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/charmbracelet/log v0.4.1
 	github.com/google/generative-ai-go v0.19.0
-	github.com/shopware/shopware-cli v0.0.0-20250319154255-3ba59afdb1c4
+	github.com/shopware/shopware-cli v0.0.0-20250415075137-eeb6ee34ad1c
 	github.com/shyim/go-version v0.0.0-20250224150004-f2d89e956a65
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
@@ -29,17 +29,16 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
-	github.com/bep/godartsass/v2 v2.4.0 // indirect
+	github.com/bep/godartsass/v2 v2.5.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/lipgloss v1.1.0 // indirect
 	github.com/charmbracelet/x/ansi v0.8.0 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13-0.20250311204145-2c3ea96c31dd // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
-	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/doutorfinancas/go-mad v0.0.0-20240205120830-463c1e9760f0 // indirect
-	github.com/evanw/esbuild v0.25.1 // indirect
+	github.com/evanw/esbuild v0.25.2 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/friendsofshopware/go-shopware-admin-api-sdk v0.0.0-20240608075117-3c16ae8b5f02 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
@@ -78,11 +77,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.26.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/net v0.37.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240617180043-68d350f18fd4 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240617180043-68d350f18fd4 // indirect
@@ -95,6 +94,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/sergi/go-diff v1.3.1
 	github.com/spf13/pflag v1.0.6 // indirect
-	golang.org/x/sync v0.12.0
-	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/sync v0.13.0
+	golang.org/x/sys v0.32.0 // indirect
 )
