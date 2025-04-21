@@ -510,16 +510,16 @@
         },
         {
             "name": "frosh/shopware-rector",
-            "version": "0.5.4",
+            "version": "0.5.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/FriendsOfShopware/shopware-rector.git",
-                "reference": "ae31e2821482ea5158a931d2313bacb8b35ddbf3"
+                "reference": "77b7bb7f7110ee6df3c6c0e181dff82cfbeef6a6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/FriendsOfShopware/shopware-rector/zipball/ae31e2821482ea5158a931d2313bacb8b35ddbf3",
-                "reference": "ae31e2821482ea5158a931d2313bacb8b35ddbf3",
+                "url": "https://api.github.com/repos/FriendsOfShopware/shopware-rector/zipball/77b7bb7f7110ee6df3c6c0e181dff82cfbeef6a6",
+                "reference": "77b7bb7f7110ee6df3c6c0e181dff82cfbeef6a6",
                 "shasum": ""
             },
             "require": {
@@ -554,9 +554,9 @@
             "description": "Shopware specific Rector",
             "support": {
                 "issues": "https://github.com/FriendsOfShopware/shopware-rector/issues",
-                "source": "https://github.com/FriendsOfShopware/shopware-rector/tree/0.5.4"
+                "source": "https://github.com/FriendsOfShopware/shopware-rector/tree/0.5.5"
             },
-            "time": "2025-02-18T08:17:51+00:00"
+            "time": "2025-04-15T08:11:30+00:00"
         },
         {
             "name": "phpstan/extension-installer",
@@ -608,16 +608,16 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.1.11",
+            "version": "2.1.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan.git",
-                "reference": "8ca5f79a8f63c49b2359065832a654e1ec70ac30"
+                "reference": "96dde49e967c0c22812bcfa7bda4ff82c09f3b0c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/8ca5f79a8f63c49b2359065832a654e1ec70ac30",
-                "reference": "8ca5f79a8f63c49b2359065832a654e1ec70ac30",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/96dde49e967c0c22812bcfa7bda4ff82c09f3b0c",
+                "reference": "96dde49e967c0c22812bcfa7bda4ff82c09f3b0c",
                 "shasum": ""
             },
             "require": {
@@ -662,7 +662,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-03-24T13:45:00+00:00"
+            "time": "2025-04-16T13:19:18+00:00"
         },
         {
             "name": "phpstan/phpstan-deprecation-rules",
