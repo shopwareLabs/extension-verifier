@@ -119,8 +119,15 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 			return nil, err
 		}
 
+		rootDir := ext.GetRootDir()
+
+		resolvedPath, err := os.Readlink(rootDir)
+		if err == nil {
+			rootDir = resolvedPath
+		}
+
 		// Skip plugins in vendor folder
-		if strings.HasPrefix(ext.GetRootDir(), vendorPath) || slices.Contains(excludeExtensions, extName) {
+		if strings.HasPrefix(rootDir, vendorPath) || slices.Contains(excludeExtensions, extName) {
 			continue
 		}
 
