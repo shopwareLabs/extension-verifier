@@ -176,7 +176,7 @@ func (e *ElementNode) Dump(indent int) string {
 			attributeStr := e.Attributes[0].Dump(indent + 1)
 			_, isIfNode := e.Attributes[0].(*TwigIfNode)
 
-			if len(attributeStr) > 60 || isIfNode {
+			if len(attributeStr) > 80 || isIfNode {
 				builder.WriteString("\n")
 				builder.WriteString(attributeStr)
 				builder.WriteString("\n")
