@@ -241,11 +241,11 @@ func (e *ElementNode) Dump(indent int) string {
 			totalLength := 0
 			for _, child := range e.Children {
 				if tplExpr, ok := child.(*TemplateExpressionNode); ok {
-					totalLength += len(tplExpr.Expression)
+					totalLength += len(tplExpr.Dump(indent + 1))
 				}
 			}
 			// If the combined length is short, keep them on the same line
-			if totalLength <= 40 {
+			if totalLength <= 100 {
 				multipleShortTemplateExpressions = true
 			}
 		}
