@@ -31,8 +31,9 @@ func copyFiles(currentPath string, targetPath string) error {
 			return fmt.Errorf("failed to get relative path for %q: %w", path, err)
 		}
 
-		// Skip .devenv and .direnv folders
-		if info.IsDir() && (relPath == ".devenv" || relPath == ".direnv") {
+		// Skip development environment and VCS metadata folders
+		// (e.g., .devenv, .direnv, .git)
+		if info.IsDir() && (relPath == ".devenv" || relPath == ".direnv" || relPath == ".git") {
 			return filepath.SkipDir
 		}
 
