@@ -30,10 +30,15 @@ var twigUpgradeCommand = &cobra.Command{
 	Short: "Experimental upgrade of Twig templates using AI",
 	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		verbose, _ := cmd.Flags().GetBool("verbose")
 		ext, err := extension.GetExtensionByFolder(args[0])
 
 		if err != nil {
 			return err
+		}
+
+		if verbose {
+			fmt.Printf("\nSystem Prompt:\n%s\n", systemPrompt)
 		}
 
 		toolCfg, err := tool.ConvertExtensionToToolConfig(ext)
@@ -149,6 +154,10 @@ var twigUpgradeCommand = &cobra.Command{
 
 				log.Info("Processing file", "file", file)
 
+				if verbose {
+					fmt.Printf("\nInput to LLM for file %s:\n%s\n", file, str.String())
+				}
+
 				text, err := client.Generate(cmd.Context(), str.String(), options)
 
 				if err != nil {
@@ -202,5 +211,6 @@ func cloneShopwareStorefront(version string) (string, error) {
 func init() {
 	twigUpgradeCommand.Flags().String("model", "gemma3:4b", "The model to use for the upgrade")
 	twigUpgradeCommand.Flags().String("provider", "ollama", "The provider to use for the upgrade")
+	twigUpgradeCommand.Flags().BoolP("verbose", "v", false, "Print verbose information including LLM inputs")
 	rootCmd.AddCommand(twigUpgradeCommand)
 }
