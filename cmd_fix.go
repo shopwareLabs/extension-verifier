@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/shopware/extension-verifier/internal/tool"
+	"github.com/shopware/shopware-cli/logging"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -28,6 +29,8 @@ var (
 			if err != nil {
 				return err
 			}
+
+			logging.FromContext(cmd.Context()).Debugf("Running fixes for Shopware version: %s", toolCfg.MinShopwareVersion)
 
 			var gr errgroup.Group
 
