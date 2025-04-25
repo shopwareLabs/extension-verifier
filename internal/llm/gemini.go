@@ -43,6 +43,8 @@ func (c *GeminiClient) Generate(ctx context.Context, prompt string, options *LLM
 
 			return c.Generate(ctx, prompt, options)
 		}
+
+		return "", err
 	}
 
 	return string(resp.Candidates[0].Content.Parts[0].(genai.Text)), nil
