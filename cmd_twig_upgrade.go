@@ -198,14 +198,13 @@ func cloneShopwareStorefront(version string) (string, error) {
 	}
 
 	git := exec.Command("git", "-c", "advice.detachedHead=false", "clone", "-q", "--branch", "v"+version, "https://github.com/shopware/storefront", tempDir, "--depth", "1")
-	git.Stdout = os.Stdout
-	git.Stderr = os.Stderr
+	output, err := git.CombinedOutput()
 
-	if err := git.Run(); err != nil {
-		return "", err
+	if err != nil {
+		log.Print(string(output))
 	}
 
-	return tempDir, nil
+	return tempDir, err
 }
 
 func init() {
