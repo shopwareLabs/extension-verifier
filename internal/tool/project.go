@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -119,15 +120,19 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 			return nil, err
 		}
 
+		rootDir := ext.GetRootDir()
+
+		resolvedPath, err := filepath.EvalSymlinks(rootDir)
+		if err == nil {
+			rootDir = resolvedPath
+		}
+
 		// Skip plugins in vendor folder
-		if strings.HasPrefix(ext.GetRootDir(), vendorPath) || slices.Contains(excludeExtensions, extName) {
+		if strings.HasPrefix(rootDir, vendorPath) || slices.Contains(excludeExtensions, extName) {
 			continue
 		}
 
-		for _, sourceDirs := range ext.GetSourceDirs() {
-			sourceDirectories = append(sourceDirectories, path.Join(ext.GetPath(), sourceDirs))
-		}
-
+		sourceDirectories = append(sourceDirectories, ext.GetSourceDirs()...)
 		adminDirectories = append(adminDirectories, getAdminFolders(ext)...)
 		storefrontDirectories = append(storefrontDirectories, getStorefrontFolders(ext)...)
 	}
