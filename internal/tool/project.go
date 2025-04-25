@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -121,7 +122,7 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 
 		rootDir := ext.GetRootDir()
 
-		resolvedPath, err := os.Readlink(rootDir)
+		resolvedPath, err := filepath.EvalSymlinks(rootDir)
 		if err == nil {
 			rootDir = resolvedPath
 		}
@@ -131,10 +132,7 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 			continue
 		}
 
-		for _, sourceDirs := range ext.GetSourceDirs() {
-			sourceDirectories = append(sourceDirectories, path.Join(ext.GetPath(), sourceDirs))
-		}
-
+		sourceDirectories = append(sourceDirectories, ext.GetSourceDirs()...)
 		adminDirectories = append(adminDirectories, getAdminFolders(ext)...)
 		storefrontDirectories = append(storefrontDirectories, getStorefrontFolders(ext)...)
 	}
