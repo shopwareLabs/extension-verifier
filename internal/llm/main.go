@@ -14,7 +14,9 @@ type LLMClient interface {
 func NewLLMClient(provider string) (LLMClient, error) {
 	switch provider {
 	case "ollama":
-		return newOllamaClient()
+		return newOpenAIClient()
+	case "openai":
+		return newOpenAIClient()
 	case "gemini":
 		return newGeminiClient()
 	case "openrouter":
