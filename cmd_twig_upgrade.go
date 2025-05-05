@@ -160,6 +160,13 @@ var twigUpgradeCommand = &cobra.Command{
 					return err
 				}
 
+				if strings.Contains(text, "</think>") {
+					thinkEndIndex := strings.Index(text, "</think>")
+					if thinkEndIndex != -1 {
+						text = text[thinkEndIndex+len("</think>"):]
+					}
+				}
+
 				start := strings.Index(text, "```twig")
 				end := strings.LastIndex(text, "```")
 
