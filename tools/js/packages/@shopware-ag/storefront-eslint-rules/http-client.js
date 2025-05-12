@@ -10,6 +10,7 @@ export default {
     },
     create(context) {
         let httpClientPropertyName = null;
+        let httpClientVariableName = null;
 
         return {
             // Handle HttpClient imports
@@ -21,6 +22,25 @@ export default {
                             'Remove HttpClient import as fetch will be used instead',
                         fix(fixer) {
                             return fixer.remove(node);
+                        },
+                    });
+                }
+            },
+
+            // Handle local variable declarations like: let client = new HttpClient(...)
+            VariableDeclarator(node) {
+                if (
+                    node.init &&
+                    node.init.type === 'NewExpression' &&
+                    node.init.callee.name === 'HttpClient'
+                ) {
+                    httpClientVariableName = node.id.name;
+                    context.report({
+                        node: node.parent,
+                        message: `Remove HttpClient assignment for '${httpClientVariableName}' as fetch will be used instead.`,
+                        fix(fixer) {
+                            // Remove the entire variable declaration
+                            return fixer.remove(node.parent);
                         },
                     });
                 }
@@ -46,13 +66,20 @@ export default {
                 }
             },
             CallExpression(node) {
-                if (
+                const isClassPropertyCall = 
                     httpClientPropertyName && // Ensure the property name was captured
                     node.callee.type === 'MemberExpression' &&
                     node.callee.object.type === 'MemberExpression' &&
                     node.callee.object.object.type === 'ThisExpression' && // Ensures it's this.httpClientPropertyName
-                    node.callee.object.property.name === httpClientPropertyName
-                ) {
+                    node.callee.object.property.name === httpClientPropertyName;
+                
+                const isLocalVariableCall = 
+                    httpClientVariableName && // Ensure the variable name was captured
+                    node.callee.type === 'MemberExpression' &&
+                    node.callee.object.type === 'Identifier' &&
+                    node.callee.object.name === httpClientVariableName;
+                
+                if (isClassPropertyCall || isLocalVariableCall) {
                     const sourceCode = context.getSourceCode();
                     const method = node.callee.property.name;
 
@@ -137,7 +164,9 @@ export default {
                                 callbackBodyText = `return ${callbackBodyText};`;
                             }
 
-                            const thenClause = `.then((${callbackParamName}) => {\n        ${callbackBodyText}\n    })`;
+                            const thenClause = `.then((${callbackParamName}) => {
+        ${callbackBodyText}
+    })`;
 
                             if (method === 'get') {
                                 fetchCode = `fetch(${urlText})\n    .then(response => response.text())\n    ${thenClause}`;
@@ -160,7 +189,9 @@ export default {
 
                         context.report({
                             node,
-                            message: `Use fetch API instead of this.${httpClientPropertyName}.${method}`,
+                            message: isClassPropertyCall 
+                                ? `Use fetch API instead of this.${httpClientPropertyName}.${method}`
+                                : `Use fetch API instead of ${httpClientVariableName}.${method}`,
                             fix(fixer) {
                                 return fixer.replaceText(node, fetchCode);
                             },
