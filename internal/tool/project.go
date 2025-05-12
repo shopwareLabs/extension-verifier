@@ -185,6 +185,7 @@ func GetConfigFromProject(root string) (*ToolConfig, error) {
 	}
 
 	toolCfg := &ToolConfig{
+		ToolDirectory:         GetToolDirectory(),
 		RootDir:               root,
 		SourceDirectories:     sourceDirectories,
 		AdminDirectories:      adminDirectories,

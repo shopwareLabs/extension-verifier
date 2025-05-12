@@ -57,7 +57,7 @@ func (p PHPCSFixer) Format(ctx context.Context, config ToolConfig, dryRun bool) 
 			args = append(args, "--dry-run")
 		}
 
-		cmd := exec.CommandContext(ctx, path.Join(cwd, "tools", "php", "vendor", "bin", "php-cs-fixer"), args...)
+		cmd := exec.CommandContext(ctx, path.Join(config.ToolDirectory, "php", "vendor", "bin", "php-cs-fixer"), args...)
 		cmd.Dir = config.RootDir
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr

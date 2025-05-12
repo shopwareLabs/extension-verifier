@@ -59,12 +59,6 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 		return nil
 	}
 
-	cwd, err := os.Getwd()
-
-	if err != nil {
-		return err
-	}
-
 	if err := installComposerDeps(config.RootDir, config.CheckAgainst); err != nil {
 		return err
 	}
@@ -76,7 +70,7 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 			}
 		}
 
-		phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json", sourceDirectory)
+		phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(config.ToolDirectory, "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json", sourceDirectory)
 		phpstan.Dir = config.RootDir
 
 		var stderr bytes.Buffer

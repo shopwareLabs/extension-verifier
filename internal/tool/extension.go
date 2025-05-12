@@ -22,6 +22,7 @@ func ConvertExtensionToToolConfig(ext extension.Extension) (*ToolConfig, error) 
 	}
 
 	cfg := &ToolConfig{
+		ToolDirectory:         GetToolDirectory(),
 		Extension:             ext,
 		ValidationIgnores:     ignores,
 		RootDir:               ext.GetPath(),

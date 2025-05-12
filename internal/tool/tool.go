@@ -17,6 +17,9 @@ func GetTools() []Tool {
 }
 
 type ToolConfig struct {
+	// Path to the tool directory
+	ToolDirectory string
+
 	// The minimum version of Shopware that is supported
 	MinShopwareVersion string
 	// The maximum version of Shopware that is supported

@@ -59,7 +59,7 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	if _, err := os.Stat(path.Join(config.RootDir, "rector.php")); err == nil {
 		rectorConfigFile = path.Join(config.RootDir, "rector.php")
 	} else {
-		rectorConfigFile = path.Join(cwd, "tools", "php", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
+		rectorConfigFile = path.Join(config.ToolDirectory, "php", "vendor", "frosh", "shopware-rector", "config", fmt.Sprintf("shopware-%s.0.php", config.MinShopwareVersion[0:3]))
 	}
 
 	if err := installComposerDeps(config.RootDir, "highest"); err != nil {
@@ -71,7 +71,7 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 			sourceDirectory = path.Join(cwd, sourceDirectory)
 		}
 
-		rector := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "rector"), "process", "--config", rectorConfigFile, "--autoload-file", path.Join("vendor", "autoload.php"), sourceDirectory)
+		rector := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(config.ToolDirectory, "php", "vendor", "bin", "rector"), "process", "--config", rectorConfigFile, "--autoload-file", path.Join("vendor", "autoload.php"), sourceDirectory)
 		rector.Dir = config.RootDir
 
 		log, _ := rector.CombinedOutput()

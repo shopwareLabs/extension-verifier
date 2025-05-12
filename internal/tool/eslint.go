@@ -68,9 +68,9 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 		gr.Go(func() error {
 			eslint := exec.CommandContext(ctx,
 				"node",
-				path.Join(cwd, "tools", "js", "node_modules", ".bin", "eslint"),
+				path.Join(config.ToolDirectory, "js", "node_modules", ".bin", "eslint"),
 				"--format=json",
-				"--config", path.Join(cwd, "tools", "js", fmt.Sprintf("eslint.config.%s.mjs", path.Base(p))),
+				"--config", path.Join(config.ToolDirectory, "js", fmt.Sprintf("eslint.config.%s.mjs", path.Base(p))),
 				"--ignore-pattern", "dist/**",
 				"--ignore-pattern", "vendor/**",
 				"--ignore-pattern", "test/e2e/**",
