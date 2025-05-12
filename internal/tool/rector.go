@@ -19,17 +19,10 @@ func (r Rector) Check(ctx context.Context, check *Check, config ToolConfig) erro
 }
 
 func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
-	// Apps don't have an composer.json file, skip them
 	if _, err := os.Stat(path.Join(config.RootDir, "composer.json")); err != nil {
 		return nil
 	}
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	// Backup composer.json
 	composerJSONPath := path.Join(config.RootDir, "composer.json")
 	var backupData []byte
 	if _, err := os.Stat(composerJSONPath); err == nil {
@@ -67,10 +60,6 @@ func (r Rector) Fix(ctx context.Context, config ToolConfig) error {
 	}
 
 	for _, sourceDirectory := range config.SourceDirectories {
-		if !path.IsAbs(sourceDirectory) {
-			sourceDirectory = path.Join(cwd, sourceDirectory)
-		}
-
 		rector := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(config.ToolDirectory, "php", "vendor", "bin", "rector"), "process", "--config", rectorConfigFile, "--autoload-file", path.Join("vendor", "autoload.php"), sourceDirectory)
 		rector.Dir = config.RootDir
 

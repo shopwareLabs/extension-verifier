@@ -31,20 +31,10 @@ func (b Prettier) Fix(ctx context.Context, config ToolConfig) error {
 }
 
 func (b Prettier) Format(ctx context.Context, config ToolConfig, dryRun bool) error {
-	cwd, err := os.Getwd()
-
-	if err != nil {
-		return err
-	}
-
 	var gr errgroup.Group
 
 	for _, sourceDirectory := range config.SourceDirectories {
 		sourceDirectory := sourceDirectory
-
-		if !path.IsAbs(sourceDirectory) {
-			sourceDirectory = path.Join(cwd, sourceDirectory)
-		}
 
 		if err := os.WriteFile(path.Join(sourceDirectory, ".prettierignore"), []byte(ignoredPaths), 0644); err != nil {
 			return err

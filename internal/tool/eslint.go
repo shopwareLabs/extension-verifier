@@ -46,12 +46,6 @@ func (e Eslint) Name() string {
 }
 
 func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) error {
-	cwd, err := os.Getwd()
-
-	if err != nil {
-		return err
-	}
-
 	paths := append(config.StorefrontDirectories, config.AdminDirectories...)
 
 	var gr errgroup.Group
@@ -60,10 +54,6 @@ func (e Eslint) Check(ctx context.Context, check *Check, config ToolConfig) erro
 
 	for _, p := range paths {
 		p := p
-
-		if !path.IsAbs(p) {
-			p = path.Join(cwd, p)
-		}
 
 		gr.Go(func() error {
 			eslint := exec.CommandContext(ctx,

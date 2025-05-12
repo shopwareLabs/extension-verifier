@@ -37,20 +37,12 @@ func (s StyleLint) Name() string {
 }
 
 func (s StyleLint) Check(ctx context.Context, check *Check, config ToolConfig) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
 	paths := append(config.StorefrontDirectories, config.AdminDirectories...)
+
 	var gr errgroup.Group
 
 	for _, p := range paths {
 		p := p
-
-		if !path.IsAbs(p) {
-			p = path.Join(cwd, p)
-		}
 
 		hasSCSS, err := hasSCSSFiles(p)
 		if err != nil {

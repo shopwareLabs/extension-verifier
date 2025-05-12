@@ -48,10 +48,6 @@ func (p PHPCSFixer) Format(ctx context.Context, config ToolConfig, dryRun bool) 
 	for _, sourceDirectory := range config.SourceDirectories {
 		fixDir := sourceDirectory
 
-		if !path.IsAbs(fixDir) {
-			fixDir = path.Join(cwd, fixDir)
-		}
-
 		args := []string{"fix", "--config", p.getConfigPath(cwd, config.RootDir), fixDir}
 		if dryRun {
 			args = append(args, "--dry-run")
