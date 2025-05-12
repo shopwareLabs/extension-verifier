@@ -90,6 +90,7 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 
 		if err := json.Unmarshal(log, &phpstanResult); err != nil {
 			fmt.Println(stderr.String())
+			fmt.Println(string(log))
 			return fmt.Errorf("failed to unmarshal phpstan output: %w", err)
 		}
 
