@@ -12,9 +12,6 @@ import (
 	"strings"
 )
 
-//go:embed phpstan.neon.sw6
-var phpstanConfigSW6 []byte
-
 var possiblePHPStanConfigs = []string{
 	"phpstan.neon",
 	"phpstan.neon.dist",
@@ -64,13 +61,13 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 	}
 
 	for _, sourceDirectory := range config.SourceDirectories {
+		phpstanArguments := []string{"-dmemory_limit=2G", path.Join(config.ToolDirectory, "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json", sourceDirectory}
+
 		if !p.configExists(config.RootDir) {
-			if err := os.WriteFile(path.Join(config.RootDir, "phpstan.neon"), phpstanConfigSW6, 0644); err != nil {
-				return err
-			}
+			phpstanArguments = append(phpstanArguments, "--configuration", path.Join(config.ToolDirectory, "php", "phpstan.neon"))
 		}
 
-		phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(config.ToolDirectory, "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json", sourceDirectory)
+		phpstan := exec.CommandContext(ctx, "php", phpstanArguments...)
 		phpstan.Dir = config.RootDir
 
 		var stderr bytes.Buffer
