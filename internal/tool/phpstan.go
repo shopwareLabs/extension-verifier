@@ -78,6 +78,7 @@ func (p PhpStan) Check(ctx context.Context, check *Check, config ToolConfig) err
 
 		phpstan := exec.CommandContext(ctx, "php", "-dmemory_limit=2G", path.Join(cwd, "tools", "php", "vendor", "bin", "phpstan"), "analyse", "--no-progress", "--no-interaction", "--error-format=json", sourceDirectory)
 		phpstan.Dir = config.RootDir
+		phpstan.Env = append(os.Environ(), "PHP_DIR="+path.Join(cwd, "tools", "php"))
 
 		var stderr bytes.Buffer
 		phpstan.Stderr = &stderr

@@ -1,6 +1,6 @@
 includes:
-    - vendor/spaze/phpstan-disallowed-calls/disallowed-dangerous-calls.neon
-    - vendor/spaze/phpstan-disallowed-calls/disallowed-execution-calls.neon
+    - %env.PHP_DIR%/vendor/spaze/phpstan-disallowed-calls/disallowed-dangerous-calls.neon
+    - %env.PHP_DIR%/vendor/spaze/phpstan-disallowed-calls/disallowed-execution-calls.neon
 
 parameters:
     level: 5
