@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/shopware/shopware-cli/extension"
 	"github.com/spf13/cobra"
@@ -15,6 +17,12 @@ var checkCommand = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Short: "Check the quality of a Shopware extension",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Error("Extension Verifier project have been moved into shopware-cli itself")
+		log.Error("The new command is: docker run --rm -v $(pwd):/ext shopware/shopware-cli extension validate --full /ext")
+		log.Error("For projects you can use: docker run --rm -v $(pwd):/ext shopware/shopware-cli project validate /ext")
+		log.Error("Sleeping for 30 seconds before running the old command")
+		time.Sleep(30 * time.Second)
+
 		reportingFormat, _ := cmd.Flags().GetString("reporter")
 		checkAgainst, _ := cmd.Flags().GetString("check-against")
 		tmpDir, err := os.MkdirTemp(os.TempDir(), "analyse-extension-*")

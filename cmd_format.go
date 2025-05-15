@@ -1,6 +1,9 @@
 package main
 
 import (
+	"time"
+
+	"github.com/charmbracelet/log"
 	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -11,6 +14,12 @@ var formatCommand = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Short: "Formats the Shopware extension",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Error("Extension Verifier project have been moved into shopware-cli itself")
+		log.Error("The new command is: docker run --rm -v $(pwd):/ext shopware/shopware-cli extension format /ext")
+		log.Error("For projects you can use: docker run --rm -v $(pwd):/ext shopware/shopware-cli project format /ext")
+		log.Error("Sleeping for 30 seconds before running the old command")
+		time.Sleep(30 * time.Second)
+
 		toolCfg, err := getToolConfig(args[0])
 		if err != nil {
 			return err

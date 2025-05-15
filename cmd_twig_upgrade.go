@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/shopware/extension-verifier/internal/llm"
@@ -31,6 +32,11 @@ var twigUpgradeCommand = &cobra.Command{
 	Short: "Experimental upgrade of Twig templates using AI",
 	Args:  cobra.ExactArgs(3),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		log.Error("Extension Verifier project have been moved into shopware-cli itself")
+		log.Error("The new command is: docker run --rm -v $(pwd):/ext shopware/shopware-cli shopware-cli extension ai twig-upgrade")
+		log.Error("Sleeping for 30 seconds before running the old command")
+		time.Sleep(30 * time.Second)
+
 		ext, err := extension.GetExtensionByFolder(args[0])
 
 		if err != nil {

@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/shopware/extension-verifier/internal/tool"
 	"github.com/shopware/shopware-cli/logging"
 	"github.com/spf13/cobra"
@@ -18,6 +20,12 @@ var (
 		Args:  cobra.ExactArgs(1),
 		Short: "Fixes known issues in a Shopware extension",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			log.Error("Extension Verifier project have been moved into shopware-cli itself")
+			log.Error("The new command is: docker run --rm -v $(pwd):/ext shopware/shopware-cli extension fix /ext")
+			log.Error("For projects you can use: docker run --rm -v $(pwd):/ext shopware/shopware-cli project fix /ext")
+			log.Error("Sleeping for 30 seconds before running the old command")
+			time.Sleep(30 * time.Second)
+
 			gitPath := filepath.Join(args[0], ".git")
 			if !allowNonGit {
 				if stat, err := os.Stat(gitPath); err != nil || !stat.IsDir() {
